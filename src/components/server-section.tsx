@@ -1,9 +1,9 @@
 "use client";
 import { ActionTooltip } from "@/components/ui/action-tooltip";
 import { useStore } from "@/store/store";
+import { usePresence } from "@/contexts/presence-provider";
 import { ServerWithMembersWithProfiles } from "@/types/server";
-import { ChannelType, MemberRole } from "@prisma/client";
-import { Plus ,Settings} from "lucide-react";
+import { ChannelType, MemberRole } from "@/lib/prisma-enums";import { Plus ,Settings} from "lucide-react";
 
 interface ServerSectionProps {
 	label: string;
@@ -16,10 +16,16 @@ interface ServerSectionProps {
 export function ServerSection({ label, role, sectionType, channelType, server }: ServerSectionProps) {
 	const isOpen = useStore.use.isOpen();
 	const onOpen = useStore.use.onOpen();
+	const { onlineProfileIds } = usePresence();
+
+	const membersLabel =
+		sectionType === "members" && server
+			? `Members — ${server.members.filter((m) => onlineProfileIds.has(m.profileId)).length} online`
+			: label;
 
 	return (
 		<div className="flex items-center justify-between p-2 ">
-			<p className="text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">{label}</p>
+			<p className="text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">{membersLabel}</p>
 			{role !== MemberRole.GUEST && sectionType === "channels" && (
 				<ActionTooltip label="Create Channel" side="top">
 					<button

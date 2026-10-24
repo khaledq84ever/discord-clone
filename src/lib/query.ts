@@ -1,14 +1,13 @@
 import { prisma } from "@/lib/prismadb";
-import { auth, currentUser,getAuth } from "@clerk/nextjs/server";
+import { getLocalUser, getLocalUserFromReq } from "@/lib/mock-user";
 import { NextApiRequest } from "next";
 import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function initProfile() {
 	noStore();
-	const user = await currentUser();
-
-	if (!user) return (await auth()).redirectToSignIn();
+	const user = await getLocalUser();
+	if (!user) redirect("/sign-in");
 
 	const profile = await prisma.profile.findUnique({
 		where: {
@@ -17,19 +16,12 @@ export async function initProfile() {
 	});
 	if (profile) return profile;
 
-	const name =
-		user?.fullName ||
-		user?.firstName ||
-		user?.lastName ||
-		user.primaryEmailAddress?.emailAddress.split("@")[0] ||
-		"unknown";
-
 	const newProfile = await prisma.profile.create({
 		data: {
 			userId: user.id,
-			email: user.primaryEmailAddress?.emailAddress as string,
-			name: name,
-			imageUrl: user?.imageUrl,
+			email: user.email,
+			name: user.name,
+			imageUrl: user.imageUrl,
 		},
 	});
 
@@ -37,8 +29,8 @@ export async function initProfile() {
 }
 
 export async function getCurrentProfile() {
-	const user = await currentUser();
-	if (!user) return (await auth()).redirectToSignIn();
+	const user = await getLocalUser();
+	if (!user) return null;
 
 	const profile = await prisma.profile.findUnique({
 		where: {
@@ -49,12 +41,12 @@ export async function getCurrentProfile() {
 }
 
 export async function getCurrentProfilePage(req: NextApiRequest) {
-	const authInfo = getAuth(req);
-	if (!authInfo.sessionId) return null;
+	const user = getLocalUserFromReq(req);
+	if (!user) return null;
 
 	const profile = await prisma.profile.findUnique({
 		where: {
-			userId: authInfo.userId as string,
+			userId: user.id,
 		},
 	});
 	if (profile) return profile;

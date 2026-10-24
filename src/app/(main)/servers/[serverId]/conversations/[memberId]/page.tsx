@@ -2,7 +2,7 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { ChatInput } from "@/components/chat/chat-input";
 import { getCurrentMember, getCurrentProfile, getOrCreateConversation } from "@/lib/query";
-import { auth } from "@clerk/nextjs/server";
+
 import { redirect } from "next/navigation";
 import { MediaRoom } from "@/components/media-room";
 
@@ -32,7 +32,7 @@ export default async function MemberIdPage(props: MemberIdPageProps) {
     const params = await props.params;
     const profile = await getCurrentProfile();
     if (!profile) {
-		return (await auth()).redirectToSignIn();
+		return redirect("/sign-in");
 	}
 
     const currentMember = await getCurrentMember(params?.serverId, profile?.id);

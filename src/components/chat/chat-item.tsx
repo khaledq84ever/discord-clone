@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionTooltip } from "@/components/ui/action-tooltip";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,9 @@ import { UserAvatar } from "@/components/user/user-avatar";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/store/store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Member, MemberRole, Profile } from "@prisma/client";
-import axios from "axios";
-import { Edit, FileText, ShieldAlert, ShieldCheck, Trash } from "lucide-react";
+import { Member, Profile } from "@/generated/prisma/client";
+import { MemberRole } from "@/lib/prisma-enums";import axios from "axios";
+import { Edit, FileText, ShieldAlert, ShieldCheck, SmilePlus, Trash } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import qs from "query-string";
@@ -29,9 +30,10 @@ interface ChatItemProps {
 	isUpdated: boolean;
 	socketUrl: string;
 	socketQuery: Record<string, string>;
+	reactions: { id: string; emoji: string; memberId: string; member: Member & { profile: Profile } }[];
 }
 
-const roleIconMap = {
+const roleIconMap: Record<string, React.ReactNode | null> = {
 	GUEST: null,
 	ADMIN: <ShieldAlert className="w-4 h-4 ml-2 text-rose-500" />,
 	MODERATOR: <ShieldCheck className="w-4 ml-2 h-4 text-indigo-500" />,
@@ -52,8 +54,14 @@ export function ChatItem({
 	isUpdated,
 	socketUrl,
 	socketQuery,
+	reactions: initialReactions,
 }: ChatItemProps) {
 	const [isEditing, setIsEditing] = useState(false);
+	const [reactions, setReactions] = useState(initialReactions);
+
+	useEffect(() => {
+		setReactions(initialReactions);
+	}, [initialReactions]);
 	const onOpen = useStore.use.onOpen();
 	const router = useRouter();
 	const params = useParams();
@@ -106,6 +114,35 @@ export function ChatItem({
 			console.error(error);
 		}
 	};
+
+	const toggleReaction = async (emoji: string) => {
+		const prev = reactions;
+		const existing = reactions.find((r) => r.memberId === currentMember.id && r.emoji === emoji);
+		if (existing) {
+			setReactions(reactions.filter((r) => r.id !== existing.id));
+		} else {
+			setReactions([
+				...reactions,
+				{ id: `tmp-${Date.now()}`, emoji, memberId: currentMember.id, member: currentMember as any },
+			]);
+		}
+		try {
+			const url = qs.stringifyUrl({ url: `${socketUrl}/${id}`, query: socketQuery });
+			await axios.put(url, { emoji });
+		} catch (error) {
+			console.error(error);
+			setReactions(prev);
+		}
+	};
+
+	const groupedReactions = Object.values(
+		reactions.reduce<Record<string, { emoji: string; count: number; mine: boolean }>>((acc, r) => {
+			acc[r.emoji] = acc[r.emoji] || { emoji: r.emoji, count: 0, mine: false };
+			acc[r.emoji].count += 1;
+			if (r.memberId === currentMember.id) acc[r.emoji].mine = true;
+			return acc;
+		}, {})
+	);
 
 	const onMemberClick = () => {
 		if(member?.id === currentMember.id) return;
@@ -161,6 +198,25 @@ export function ChatItem({
 							)}
 						</p>
 					)}
+					{groupedReactions.length > 0 && (
+						<div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+							{groupedReactions.map((r) => (
+								<button
+									key={r.emoji}
+									onClick={() => toggleReaction(r.emoji)}
+									className={cn(
+										"flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border transition",
+										r.mine
+											? "bg-indigo-500/20 border-indigo-500/50 text-indigo-500 dark:text-indigo-300"
+											: "bg-zinc-100 border-zinc-300 dark:bg-zinc-700/60 dark:border-zinc-600 hover:border-zinc-400"
+									)}
+								>
+									<span>{r.emoji}</span>
+									<span className="font-semibold">{r.count}</span>
+								</button>
+							))}
+						</div>
+					)}
 					{!fileUrl && isEditing && (
 						<Form {...form}>
 							<form
@@ -196,16 +252,23 @@ export function ChatItem({
 					)}
 				</div>
 			</div>
-			{canDeleteMessage && (
-				<div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm">
-					{canEditMessage && (
-						<ActionTooltip label="Edit">
-							<Edit
-								onClick={() => setIsEditing(true)}
-								className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
-							/>
-						</ActionTooltip>
-					)}
+			<div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm">
+				{!deleted && (
+					<ActionTooltip label="Add Reaction">
+						<div className="cursor-pointer h-5 w-5 flex items-center justify-center">
+							<EmojiPicker onChange={(emoji) => toggleReaction(emoji)} />
+						</div>
+					</ActionTooltip>
+				)}
+				{canEditMessage && (
+					<ActionTooltip label="Edit">
+						<Edit
+							onClick={() => setIsEditing(true)}
+							className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+						/>
+					</ActionTooltip>
+				)}
+				{canDeleteMessage && (
 					<ActionTooltip label="Delete">
 						<Trash
 							onClick={() =>
@@ -214,8 +277,8 @@ export function ChatItem({
 							className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
 						/>
 					</ActionTooltip>
-				</div>
-			)}
+				)}
+			</div>
 		</div>
 	);
 }

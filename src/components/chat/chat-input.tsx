@@ -11,6 +11,9 @@ import qs from "query-string";
 import { useStore } from "@/store/store";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { useRouter } from "next/navigation";
+import { getLocalUserClient } from "@/lib/local-user-client";
+import { useSocket } from "@/contexts/socket-provider";
+import { useEffect, useRef } from "react";
 interface ChatInputProps {
 	apiUrl: string;
 	query: Record<string, any>;
@@ -24,6 +27,29 @@ const formSchema = z.object({
 export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
 	const router = useRouter();
 	const onOpen = useStore.use.onOpen();
+	const { socket } = useSocket();
+	const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+	const chatId = (type === "channel" ? query?.channelId : query?.conversationId) as string;
+
+	const emitTyping = (started: boolean) => {
+		if (!socket || !chatId) return;
+		socket.emit(started ? "typing:start" : "typing:stop", { chatId, name: getLocalUserClient()?.name ?? "Someone" });
+	};
+
+	const handleTypingChange = (value: string) => {
+		if (!typingTimeout.current) emitTyping(true);
+		if (typingTimeout.current) clearTimeout(typingTimeout.current);
+		typingTimeout.current = setTimeout(() => {
+			emitTyping(false);
+			typingTimeout.current = null;
+		}, 2500);
+	};
+
+	useEffect(() => {
+		return () => {
+			emitTyping(false);
+		};
+	}, []);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -31,6 +57,15 @@ export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
 		},
 	});
 	const isLoading = form.formState.isSubmitting;
+	const contentValue = form.watch("content");
+
+	useEffect(() => {
+		if (contentValue) {
+			handleTypingChange(contentValue);
+		} else {
+			emitTyping(false);
+		}
+	}, [contentValue]);
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
 		try {

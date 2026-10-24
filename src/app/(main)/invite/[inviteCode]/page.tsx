@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prismadb";
 import { getCurrentProfile, getServerByInviteCode } from "@/lib/query";
-import { auth } from "@clerk/nextjs/server";
+
 import { redirect } from "next/navigation";
 
 export default async function InviteCodePage(props: { params: Promise<{ inviteCode: string }> }) {
     const params = await props.params;
     const profile = await getCurrentProfile();
     if (!profile) {
-		return (await auth()).redirectToSignIn();
+		return redirect("/sign-in");
 	}
     if (!params.inviteCode) {
 		return redirect("/");

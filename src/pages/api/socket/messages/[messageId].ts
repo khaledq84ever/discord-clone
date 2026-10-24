@@ -2,12 +2,11 @@ import { NextApiRequest } from "next";
 import { NextApiResponseServerIo } from "@/types/server";
 import { getCurrentProfilePage } from "@/lib/query";
 import { prisma } from "@/lib/prismadb";
-import { MemberRole } from "@prisma/client";
-
+import { MemberRole } from "@/lib/prisma-enums";
 
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
-	if (req.method !== "DELETE" && req.method !== "PATCH") {
+	if (req.method !== "DELETE" && req.method !== "PATCH" && req.method !== "PUT") {
 		return res.status(405).json({ message: "Method not allowed" });
 	}
 	try {
@@ -97,9 +96,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                         include:{
                             profile:true,
                         }
-                    }
+                    },
+                    reactions: { include: { member: { include: { profile: true } } } },
                 }
             })
+        }
+        if(req.method === "PUT"){
+            const { emoji } = req.body;
+            if (!emoji) {
+                return res.status(400).json({ message: "Emoji is required" });
+            }
+            const existingReaction = await prisma.reaction.findFirst({
+                where: { messageId: message.id, memberId: member.id, emoji },
+            });
+            if (existingReaction) {
+                await prisma.reaction.delete({ where: { id: existingReaction.id } });
+            } else {
+                await prisma.reaction.create({
+                    data: { messageId: message.id, memberId: member.id, emoji },
+                });
+            }
+            message = await prisma.message.findFirst({
+                where: { id: message.id },
+                include: {
+                    member: { include: { profile: true } },
+                    reactions: { include: { member: { include: { profile: true } } } },
+                },
+            });
         }
         if(req.method === "PATCH"){
             if(!isMessageOwner) {
@@ -120,7 +143,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                         include:{
                             profile:true,
                         }
-                    }
+                    },
+                    reactions: { include: { member: { include: { profile: true } } } },
                 }
             })
         }

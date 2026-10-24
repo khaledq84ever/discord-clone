@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prismadb";
 import { getCurrentProfile } from "@/lib/query";
-import { DirectMessage, Message } from "@prisma/client";
+import { DirectMessage, Message } from "@/generated/prisma/client";
 import { NextResponse } from "next/server";
 
 const MESSAGE_BATCH = 10;

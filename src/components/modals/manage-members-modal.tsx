@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { useStore } from "@/store/store";
 import { ServerWithMembersWithProfiles } from "@/types/server";
-import { MemberRole } from "@prisma/client";
+import { MemberRole } from "@/lib/prisma-enums";
 import axios from "axios";
 import { Check, Gavel, Loader2, MoreVertical, Shield, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ export function ManageMembersModal() {
 	const onClose = useStore.use.onClose();
 	const data = useStore.use.data() as { server: ServerWithMembersWithProfiles };
 	const isModelOpen = isOpen && type === "manageMembers";
-	const roleIconMap = {
+	const roleIconMap: Record<string, React.ReactNode | null> = {
 		[MemberRole.ADMIN]: <ShieldAlert className="w-4 text-rose-500 h-4 ml-2" />,
 		[MemberRole.MODERATOR]: <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400  ml-2" />,
 		[MemberRole.GUEST]: null,

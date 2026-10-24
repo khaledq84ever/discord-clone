@@ -2,26 +2,25 @@
 import { ServerHeader } from "@/components/layout/server-header";
 import { SideBarItem } from "@/components/layout/side-bar-item";
 import { ServerChannel } from "@/components/server-channel";
-import {ServerMember} from "@/components/server-member";
+import { MemberList } from "@/components/member-list";
 import { ServerSearch } from "@/components/server-search";
 import { ServerSection } from "@/components/server-section";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { getCurrentProfile, getServer } from "@/lib/query";
-import { ChannelType, MemberRole } from "@prisma/client";
-import { Hash, Mic, ShieldAlert, ShieldCheck, Video } from "lucide-react";
+import { ChannelType, MemberRole } from "@/lib/prisma-enums";import { Hash, Mic, ShieldAlert, ShieldCheck, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 interface ServerSideBarProps {
 	serverId: string;
 }
 
-const iconMap = {
+const iconMap: Record<string, React.ReactNode> = {
 	[ChannelType.TEXT]: <Hash className="mr-2 h-4 w-4" />,
 	[ChannelType.AUDIO]: <Mic className="mr-2 h-4 w-4" />,
 	[ChannelType.VIDEO]: <Video className="mr-2 h-4 w-4" />,
 };
 
-const roleIconMap = {
+const roleIconMap: Record<string, React.ReactNode | null> = {
 	[MemberRole.GUEST]: null,
 	[MemberRole.ADMIN]: <ShieldAlert className="text-rose-500 mr-2 h-4 w-4" />,
 	[MemberRole.MODERATOR]: <ShieldCheck className="text-indigo-500 mr-2 h-4 w-4" />,
@@ -30,7 +29,7 @@ const roleIconMap = {
 export async function ServerSideBar({ serverId }: ServerSideBarProps) {
 	const profile = await getCurrentProfile();
 	if (!profile) {
-		return redirect("/");
+		return redirect("/sign-in");
 	}
 
 	const server = await getServer(serverId, profile.id);
@@ -41,7 +40,7 @@ export async function ServerSideBar({ serverId }: ServerSideBarProps) {
 	const members = server?.members.filter((member) => member.profileId !== profile.id);
 
 	if (!server) {
-		return redirect("/");
+		return redirect("/sign-in");
 	}
 
 	const role = server?.members?.find((member) => member.profileId === profile.id)?.role;
@@ -144,11 +143,7 @@ export async function ServerSideBar({ serverId }: ServerSideBarProps) {
 							label="Members"
 							server={server}
 						/>
-						<div className="flex flex-col space-y-[2px]">
-							{members.map((member) => (
-								<ServerMember key={member.id} member={member} server={server} />
-							))}
-						</div>
+						{members?.length > 0 && <MemberList server={{ ...server, members: members.map((m) => ({ ...m, profile: m.profile as any })) } as any} />}
 					</div>
 				)}
 			</ScrollArea>

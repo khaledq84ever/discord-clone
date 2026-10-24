@@ -1,15 +1,17 @@
 "use client";
 
 import { ChatItem } from "@/components/chat/chat-item";
+import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { ChatWelcome } from "@/components/chat/chat-welcome";
 import { useChatQuery } from "@/hooks/use-chat-query";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
+import { useUnreadStore } from "@/store/unread-store";
 import { useChatSocket } from "@/hooks/use-chat-socket";
 import { MessagesWithMemberWithProfile } from "@/types/server";
-import { Member } from "@prisma/client";
+import { Member } from "@/generated/prisma/client";
 import { format } from "date-fns";
 import { Loader2, ServerCrash } from "lucide-react";
-import { ElementRef, Fragment, useRef } from "react";
+import { ElementRef, Fragment, useEffect, useRef } from "react";
 
 const DATE_FORMAT = "d MMM yyyy, HH:mm";
 
@@ -40,6 +42,10 @@ export function ChatMessages({
 	const addKey = `chat:${chatId}/messages`;
 	const updateKey = `chat:${chatId}/messages:update`;
 	const chatRef = useRef<ElementRef<"div">>(null);
+
+	useEffect(() => {
+		useUnreadStore.getState().clear(chatId);
+	}, [chatId]);
 	const bottomRef = useRef<ElementRef<"div">>(null);
 
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
@@ -51,7 +57,7 @@ export function ChatMessages({
 
 	const latestMessageId = data?.pages?.[0]?.items?.[data?.pages?.[0]?.items?.length - 1]?.id;
 
-	useChatSocket({ queryKey, addKey, updateKey });
+	useChatSocket({ queryKey, addKey, updateKey, chatId });
 
 	useChatScroll({
 		chatRef,
@@ -110,6 +116,7 @@ export function ChatMessages({
 								fileUrl={message.fileUrl}
 								deleted={message.deleted}
 								timestamp={format(new Date(message.createdAt), DATE_FORMAT)}
+								reactions={(message as any).reactions ?? []}
 								socketUrl={socketUrl}
 								socketQuery={socketQuery}
 							/>
@@ -117,7 +124,8 @@ export function ChatMessages({
 					</Fragment>
 				))}
 			</div>
-			<div ref={bottomRef}></div>
+			<TypingIndicator chatId={chatId} />
+				<div ref={bottomRef}></div>
 		</div>
 	);
 }

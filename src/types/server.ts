@@ -1,4 +1,4 @@
-import { Member, Profile, Message,Server } from "@prisma/client";
+import { Member, Profile, Message,Server } from "@/generated/prisma/client";
 import { NextApiResponse } from "next";
 import { Server as NetServer, Socket } from "node:net";
 import { Server as SocketIOServer } from "socket.io";

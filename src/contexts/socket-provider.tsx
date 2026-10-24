@@ -2,6 +2,7 @@
 import { useState,useEffect,createContext,useContext, } from "react";
 
 import { io as ClientIO} from "socket.io-client";
+import { PresenceProvider } from "@/contexts/presence-provider";
 
 type SocketContextType = {
     socket: any | null;
@@ -20,7 +21,7 @@ export const SocketProvider = ({ children }: {children : React.ReactNode}) => {
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        const client = new (ClientIO as any)(process.env.NEXT_PUBLIC_SITE_URL!, {
+        const client = new (ClientIO as any)(process.env.NEXT_PUBLIC_SITE_URL || window.location.origin, {
             path : "/api/socket/io",
             addTrailingSlash : false,
         });
@@ -36,5 +37,9 @@ export const SocketProvider = ({ children }: {children : React.ReactNode}) => {
         };
     }, []);
 
-    return <SocketContext.Provider value={{ socket, isConnected }}>{children}</SocketContext.Provider>;
+    return (
+        <SocketContext.Provider value={{ socket, isConnected }}>
+            <PresenceProvider>{children}</PresenceProvider>
+        </SocketContext.Provider>
+    );
 };

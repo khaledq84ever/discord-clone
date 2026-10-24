@@ -1,11 +1,12 @@
 "use client"
 import { ActionTooltip } from '@/components/ui/action-tooltip';
 import { cn } from '@/lib/utils';
-import { Channel, ChannelType, MemberRole, Server } from '@prisma/client'
-import { Edit, Hash, Mic, Trash, Video ,Lock} from 'lucide-react';
+import { Channel, Server } from "@/generated/prisma/client";
+import { ChannelType, MemberRole } from "@/lib/prisma-enums";import { Edit, Hash, Mic, Trash, Video ,Lock} from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import React from 'react'
 import { useStore } from "@/store/store";
+import { useUnreadStore } from "@/store/unread-store";
 import { ModalType } from '@/types/store';
 
 interface ServerChannelParams {
@@ -14,7 +15,7 @@ interface ServerChannelParams {
     role?: MemberRole
 }
 
-const iconMap = {
+const iconMap: Record<string, any> = {
     [ChannelType.TEXT]: Hash,
     [ChannelType.AUDIO]: Mic,
     [ChannelType.VIDEO]: Video
@@ -27,6 +28,7 @@ export  function ServerChannel({channel,server,role}:ServerChannelParams) {
     const params = useParams();
 
     const Icon = iconMap[channel.type];
+    const unread = useUnreadStore((state) => state.counts[channel.id] ?? 0);
     const onClick = () => {
 		router.push(`/servers/${params?.serverId}/channels/${channel.id}`);
 	};
@@ -52,6 +54,11 @@ export  function ServerChannel({channel,server,role}:ServerChannelParams) {
 			>
 				{channel.name}
 			</p>
+			{unread > 0 && (
+				<span className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+					{unread > 99 ? "99+" : unread}
+				</span>
+			)}
 			{channel.name !== "general" && role !== MemberRole.GUEST && (
 				<div className="ml-auto flex items-center gap-x-2">
 					<ActionTooltip label="Edit">

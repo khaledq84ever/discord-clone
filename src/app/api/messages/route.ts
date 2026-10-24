@@ -1,7 +1,7 @@
 
 import { prisma } from "@/lib/prismadb";
 import { getCurrentProfile } from "@/lib/query";
-import { Message } from "@prisma/client";
+import { Message } from "@/generated/prisma/client";
 import { NextResponse } from "next/server";
 
 const MESSAGE_BATCH = 10;
@@ -37,6 +37,7 @@ export async function GET(req: Request) {
                         profile: true,
                     },
                 },
+                reactions: { include: { member: { include: { profile: true } } } },
             },
             orderBy: {
                 createdAt: "desc"
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
                         profile: true,
                     },
                 },
+                reactions: { include: { member: { include: { profile: true } } } },
             },
             orderBy: {
                 createdAt: "desc"

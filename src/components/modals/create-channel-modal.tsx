@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select ,SelectContent,SelectLabel,SelectItem,SelectTrigger, SelectValue} from "@/components/ui/select";
 import { useStore } from "@/store/store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChannelType } from "@prisma/client";
+import { ChannelType } from "@/lib/prisma-enums";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -42,17 +42,19 @@ export function CreateChannelModal() {
 			}),
 		type: z.nativeEnum(ChannelType),
 	});
-	const form = useForm({
+	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			name: "",
-			type: data?.channelType || ChannelType.TEXT,
+			type: ((data?.channelType && Object.values(ChannelType).includes(data.channelType as any)
+				? data.channelType
+				: ChannelType.TEXT)) as "TEXT" | "AUDIO" | "VIDEO",
 		},
 	});
 
 	useEffect(() => {
 		if (data?.channelType) {
-			form.setValue("type", data?.channelType);
+			form.setValue("type", data?.channelType as "TEXT" | "AUDIO" | "VIDEO");
 		} else {
 			form.setValue("type", ChannelType.TEXT);
 		}

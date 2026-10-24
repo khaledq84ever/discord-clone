@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { getLocalUserClient } from "@/lib/local-user-client";
 import {
     ControlBar,
     GridLayout,
@@ -24,16 +24,13 @@ interface MediaRoomProps {
 }
 
 export function MediaRoom({ serverId, chatId, video, audio }: MediaRoomProps) {
-	const { user, isLoaded } = useUser();
+	const user = getLocalUserClient();
+	const isLoaded = true;
 	const router = useRouter();
 	const [token, setToken] = useState("");
 
 	useEffect(() => {
-		const name =
-			user?.fullName ||
-			user?.firstName ||
-			user?.lastName ||
-			user?.primaryEmailAddress?.emailAddress.split("@")[0];
+		const name = user?.name ?? "Guest";
 		if (!name) return;
 		(async () => {
 			console.log("resp");
@@ -46,7 +43,7 @@ export function MediaRoom({ serverId, chatId, video, audio }: MediaRoomProps) {
 				console.error(e);
 			}
 		})();
-	}, [chatId, user?.firstName, user?.lastName, user?.fullName, user?.primaryEmailAddress?.emailAddress]);
+	}, [chatId, user?.name]);
 
 	if (token === "" || !isLoaded) {
 		return (

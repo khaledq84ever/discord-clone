@@ -1,17 +1,19 @@
 import { useSocket } from "@/contexts/socket-provider";
-import { Member, Message, Profile } from "@prisma/client";
+import { Member, Message, Profile } from "@/generated/prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useUnreadStore } from "@/store/unread-store";
 
 type ChatSocketProps = {
 	addKey: string;
 	updateKey: string;
 	queryKey: string;
+	chatId?: string;
 };
 
 type MessageWithMemberWithProfile = Message & { member: Member & { profile: Profile } };
 
-export const useChatSocket = ({ addKey, updateKey, queryKey }: ChatSocketProps) => {
+export const useChatSocket = ({ addKey, updateKey, queryKey, chatId }: ChatSocketProps) => {
 
 	const { socket } = useSocket();
 	const queryClient = useQueryClient();
@@ -34,6 +36,9 @@ export const useChatSocket = ({ addKey, updateKey, queryKey }: ChatSocketProps) 
 			});
 		});
 		socket?.on(addKey, (message: MessageWithMemberWithProfile) => {
+			if (chatId && !window.location.pathname.includes(chatId)) {
+				useUnreadStore.getState().inc(chatId);
+			}
 			queryClient.setQueryData([queryKey], (oldData: any) => {
 				if (!oldData || !oldData.pages || oldData.pages.length === 0) {
 					return {

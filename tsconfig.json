@@ -26,7 +26,7 @@
         "./src/*"
       ]
     },
-    "target": "ES2017"
+    "target": "ES2023"
   },
   "ts-node": {
     //* Add this when using ts-node

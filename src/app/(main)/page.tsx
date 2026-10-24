@@ -1,9 +1,8 @@
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { UserDetails } from "@/components/user/user-details";
 import { ModeToggle } from "@/components/mode-toggler";
 import { initProfile, getFirstServer } from "@/lib/query";
 import {InitialModel} from "@/components/modals/initial-model";
-
+import Image from "next/image";
 
 
 
@@ -24,13 +23,15 @@ export default async function Home() {
 								<ModeToggle />
 							</div>
 							<div className="flex items-center gap-2">
-								<UserButton
-									appearance={{
-										elements: {
-											userButtonAvatarBox: "size-6",
-										},
-									}}
-								/>
+								<div className="size-6 rounded-full overflow-hidden">
+									<Image
+										src={profile.imageUrl || "/icon.png"}
+										alt="avatar"
+										width={24}
+										height={24}
+										className="size-6 object-cover"
+									/>
+								</div>
 							</div>
 						</header>
 						{!server && <InitialModel />}

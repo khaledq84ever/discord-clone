@@ -1,5 +1,5 @@
 import { getCurrentProfile, getGeneralServer } from "@/lib/query";
-import { auth } from "@clerk/nextjs/server";
+
 import { redirect } from "next/navigation";
 
 interface ServerIdPageProps {
@@ -12,7 +12,7 @@ export default async function ServerIdPage(props: ServerIdPageProps) {
     const params = await props.params;
     const profile = await getCurrentProfile();
     if (!profile) {
-		return (await auth()).redirectToSignIn();
+		return redirect("/sign-in");
 	}
     const generalServer = await getGeneralServer(params.serverId, profile.id);
 
@@ -20,7 +20,7 @@ export default async function ServerIdPage(props: ServerIdPageProps) {
         redirect(`/servers/${params.serverId}/channels/${generalServer?.channels?.[0]?.id}`);
     }
     if (!generalServer) {
-        return (await auth()).redirectToSignIn();
+        return redirect("/sign-in");
     }
     return <div>New server</div>;
 }

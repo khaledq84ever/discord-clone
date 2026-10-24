@@ -1,15 +1,11 @@
-import { ourFileRouter } from "@/app/api/uploadthing/core";
 import "@/app/globals.css";
 import { ModalProvider } from "@/contexts/modal-provider";
 import { QueryProvider } from "@/contexts/query-provider";
 import { SocketProvider } from "@/contexts/socket-provider";
 import { ThemeProvider } from "@/contexts/theme-provider";
 import { cn } from "@/lib/utils";
-import { ClerkProvider } from "@clerk/nextjs";
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
-import { extractRouterConfig } from "uploadthing/server";
 
 const open_sans = Open_Sans({ subsets: ["latin"] });
 
@@ -29,41 +25,20 @@ export default function RootLayout({
 	return (
 		<html lang="en" className="scroll-smooth" suppressHydrationWarning>
 			<body className={cn(open_sans.className, "bg-white dark:bg-[#313338]")}>
-				<ClerkProvider
-					afterSignOutUrl="/"
-					appearance={{
-						// Clerk v7 renders dark when the app is in dark mode, so light-only
-						// element overrides (white card/buttons) would hide its light text.
-						variables: { colorPrimary: "#6366f1" },
-						elements: {
-							socialButtonsBlockButtonText: "font-semibold",
-						},
-					}}
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="dark"
+					enableSystem={false}
+					storageKey="discord-clone-theme"
+					disableTransitionOnChange
 				>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="dark"
-						enableSystem={false}
-						storageKey="discord-clone-theme"
-						disableTransitionOnChange
-					>
-						<NextSSRPlugin
-							/**
-							 * The `extractRouterConfig` will extract **only** the route configs
-							 * from the router to prevent additional information from being
-							 * leaked to the client. The data passed to the client is the same
-							 * as if you were to fetch `/api/uploadthing` directly.
-							 */
-							routerConfig={extractRouterConfig(ourFileRouter)}
-						/>
-						<SocketProvider>
-							<QueryProvider>
-								<ModalProvider />
-								{children}
-							</QueryProvider>
-						</SocketProvider>
-					</ThemeProvider>
-				</ClerkProvider>
+					<SocketProvider>
+						<QueryProvider>
+							<ModalProvider />
+							{children}
+						</QueryProvider>
+					</SocketProvider>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

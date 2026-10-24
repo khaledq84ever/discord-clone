@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prismadb";
 import { getCurrentProfile } from "@/lib/query";
-import { MemberRole } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { MemberRole } from "@/lib/prisma-enums";import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
 

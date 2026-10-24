@@ -2,8 +2,7 @@ import { NextApiRequest } from "next";
 import { NextApiResponseServerIo } from "@/types/server";
 import { getCurrentProfilePage } from "@/lib/query";
 import { prisma } from "@/lib/prismadb";
-import { MemberRole } from "@prisma/client";
-
+import { MemberRole } from "@/lib/prisma-enums";
 
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {

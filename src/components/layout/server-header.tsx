@@ -9,8 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useStore } from "@/store/store";
 import { ServerWithMembersWithProfiles } from "@/types/server";
-import { MemberRole } from "@prisma/client";
-import { ChevronDown, LogOut, PlusCircle, Settings, TrashIcon, UserPlus, Users } from "lucide-react";
+import { MemberRole } from "@/lib/prisma-enums";import { ChevronDown, LogOut, PlusCircle, Settings, TrashIcon, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 
 interface ServerHeaderProps {

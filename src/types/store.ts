@@ -1,5 +1,5 @@
-import { Channel, ChannelType, Server } from "@prisma/client";
-import { StateCreator } from "zustand";
+import { Channel, Server } from "@/generated/prisma/client";
+import { ChannelType } from "@/lib/prisma-enums";import { StateCreator } from "zustand";
 
 export type ModalType =
 	| "createServer"

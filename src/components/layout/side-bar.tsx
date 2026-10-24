@@ -5,14 +5,14 @@ import { ModeToggle } from "@/components/mode-toggler";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { getAllServers, getCurrentProfile } from "@/lib/query";
-import { UserButton } from "@clerk/nextjs";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 
 export  async function SideBar() {
 	const profile = await getCurrentProfile();
 	if (!profile) {
-		return redirect("/");
+		return redirect("/sign-in");
 	}
 
 	const servers = await getAllServers(profile.id);
@@ -30,13 +30,15 @@ export  async function SideBar() {
 			</ScrollArea>
 			<div className="pb-3 mt-auto flex items-center flex-col gap-y-4">
 				<ModeToggle />
-				<UserButton
-					appearance={{
-						elements: {
-							avatarBox: "h-[48px] w-[48px]",
-						},
-					}}
-				/>
+				<div className="h-[48px] w-[48px] rounded-[24px] overflow-hidden">
+					<Image
+						src={profile.imageUrl || "/icon.png"}
+						alt="avatar"
+						width={48}
+						height={48}
+						className="h-[48px] w-[48px] object-cover"
+					/>
+				</div>
 			</div>
 		</div>
 	);
