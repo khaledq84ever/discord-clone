@@ -38,6 +38,15 @@
 ![alt text](mockup-desktop.png)
 ![alt text](mockup-mobile.png)
 
+## Highlights
+
+![Discord Clone](assets/banner.svg)
+
+|  |  |
+|---|---|
+| ![Reply](assets/feature-reply.svg) | ![Pin](assets/feature-pin.svg) |
+| ![Markdown](assets/feature-markdown.svg) | ![Ban](assets/feature-ban.svg) |
+
 
 ### Built With
 
