@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     }
     try {
         const profile = await getCurrentProfilePage(req);
-        const {fileUrl ,content } = req.body;
+        const {fileUrl ,content, replyToId } = req.body;
         const {channelId, serverId} = req.query;
         if(!profile) {
             return res.status(401).json({message: "Unauthorized"});
@@ -57,18 +57,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             return res.status(404).json({message: "Member not found"});
         }
 
+        // Feature: reply-to. Only accept a replyToId that points at a
+        // live (non-deleted) message in this same channel.
+        let validReplyToId: string | null = null;
+        if (replyToId) {
+            const parent = await prisma.message.findFirst({
+                where: { id: replyToId as string, channelId: channel.id, deleted: false },
+                select: { id: true },
+            });
+            validReplyToId = parent?.id ?? null;
+        }
+
         const message = await prisma.message.create({
             data: {
                 content,
                 fileUrl,
                 memberId: member.id,
                 channelId: channel.id as string,
+                replyToId: validReplyToId,
             },
             include: {
                 member: {
                     include: {
                         profile: true,
                     },
+                },
+                reactions: { include: { member: { include: { profile: true } } } },
+                replyTo: {
+                    include: { member: { include: { profile: true } } },
                 },
             },
         });

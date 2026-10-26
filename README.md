@@ -53,11 +53,13 @@
 - ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101)
 - ![livekit](https://img.shields.io/badge/livekit-black?style=for-the-badge&logo=livekit)
 - ![Prisma](https://img.shields.io/badge/Prisma-011627?style=for-the-badge&logo=prisma&logoColor=white)
-- ![Clerk](https://img.shields.io/badge/Clerk-765eff.svg?style=for-the-badge&logo=clerk&logoColor=white)
+- **Custom local authentication** (migrated off Clerk)
+
+> **Stack note:** this fork runs **Next.js 16** (production build via `next build --webpack`) and **Prisma 7** with a **SQLite** dev database, served by a custom `server.mjs` (Next + Socket.io on the same port).
 
 ## Features
 
-- 🔒 **Authentication + Google Auth** With **Clerk**
+- 🔒 **Authentication** — custom **local auth** (email/password), migrated off Clerk
 - 🎉 **Server** **creation** and customization
 - 📱 **Real-time** messaging using **Socket.io**
 - 📳**Websocket** **fallback**: **Polling** with alerts
@@ -82,30 +84,45 @@
 
 First, run the development server:
 
+> **Requirements:** Node.js and **pnpm** (the repo ships a `pnpm-lock.yaml`).
+
 1. Clone or Fork the repo
 
    ```sh
-   git clone https://github.com/issam-seghir/discord-clone.git
-   cd ./your_project
+   git clone https://github.com/khaledq84ever/discord-clone.git
+   cd discord-clone
    ```
 
-2. Install Dependencies
+2. Install dependencies (the `postinstall` hook runs `prisma generate`)
 
    ```sh
-   npm install
+   pnpm install
    ```
 
-3. rename `.env.example` file to `.env`
+3. Copy `.env.example` to `.env` and fill it in. Required keys: `DATABASE_URL`
+   (SQLite, e.g. `file:./dev.db`), `UPLOADTHING_TOKEN`, and `LIVEKIT_API_KEY` /
+   `LIVEKIT_API_SECRET` / `NEXT_PUBLIC_LIVEKIT_URL`. **The `CLERK_*` keys are
+   legacy and no longer used** (auth is now local).
 
-4. Start the server
+4. Set up the database (migrate + seed)
 
-    ```sh
-    npm run dev
-    ```
+   ```sh
+   pnpm run setup
+   ```
+
+5. Start the dev server
+
+   ```sh
+   pnpm dev
+   ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Routes live under `src/app`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production
+
+`pnpm build` then `pnpm run serve` — this starts the custom `server.mjs`
+(Next + Socket.io) on `$PORT` (defaults to 3000; the bundled PM2 config uses 3010).
 
 ## Deploy on Vercel
 
