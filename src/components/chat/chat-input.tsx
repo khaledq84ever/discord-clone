@@ -3,7 +3,8 @@
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Smile } from "lucide-react";
+import { Plus, Smile, X, Reply } from "lucide-react";
+import { useReplyStore } from "@/store/reply-store";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import axios from "axios";
@@ -30,6 +31,8 @@ export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
 	const { socket } = useSocket();
 	const typingTimeout = useRef<NodeJS.Timeout | null>(null);
 	const chatId = (type === "channel" ? query?.channelId : query?.conversationId) as string;
+	const replyTarget = useReplyStore((s) => s.targets[chatId]);
+	const clearReply = useReplyStore((s) => s.clear);
 
 	const emitTyping = (started: boolean) => {
 		if (!socket || !chatId) return;
@@ -73,8 +76,9 @@ export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
                 url: apiUrl,
                 query
             });
-            await axios.post(url, values);
+            await axios.post(url, { ...values, replyToId: replyTarget?.id });
 			form.reset();
+			if (chatId) clearReply(chatId);
 			router.refresh();
         } catch (error) {
             console.error(error);
@@ -83,6 +87,21 @@ export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)}>
+				{replyTarget && (
+					<div className="mx-4 mt-2 flex items-center justify-between rounded-t-md bg-zinc-200/80 dark:bg-zinc-700/70 px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+						<span className="flex items-center gap-x-1 truncate">
+							<Reply className="w-3 h-3 rotate-180 shrink-0" />
+							Replying to <span className="font-semibold">{replyTarget.name}</span>
+						</span>
+						<button
+							type="button"
+							onClick={() => chatId && clearReply(chatId)}
+							className="ml-2 hover:text-zinc-900 dark:hover:text-white"
+						>
+							<X className="w-4 h-4" />
+						</button>
+					</div>
+				)}
 				<FormField
 					control={form.control}
 					name="content"

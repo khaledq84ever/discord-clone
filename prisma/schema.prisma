@@ -46,6 +46,7 @@ model Server {
 model Member {
   id                     String          @id @default(cuid())
   role                   String          @default("GUEST")
+  banned                 Boolean         @default(false)
   profileId              String
   profile                Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
   serverId               String
@@ -90,11 +91,18 @@ model Message {
   channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
   reactions Reaction[]
 
+  pinned    Boolean    @default(false)
+
+  replyToId String?
+  replyTo   Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies   Message[]  @relation("MessageReplies")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([channelId])
   @@index([memberId])
+  @@index([replyToId])
 }
 
 model Reaction {

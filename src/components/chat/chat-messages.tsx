@@ -117,6 +117,8 @@ export function ChatMessages({
 								deleted={message.deleted}
 								timestamp={format(new Date(message.createdAt), DATE_FORMAT)}
 								reactions={(message as any).reactions ?? []}
+								pinned={(message as any).pinned ?? false}
+								replyTo={(message as any).replyTo ?? null}
 								socketUrl={socketUrl}
 								socketQuery={socketQuery}
 							/>

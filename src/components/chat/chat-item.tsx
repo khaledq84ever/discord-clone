@@ -11,7 +11,10 @@ import { useStore } from "@/store/store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Member, Profile } from "@/generated/prisma/client";
 import { MemberRole } from "@/lib/prisma-enums";import axios from "axios";
-import { Edit, FileText, ShieldAlert, ShieldCheck, SmilePlus, Trash } from "lucide-react";
+import { Edit, FileText, Pin, PinOff, Reply, ShieldAlert, ShieldCheck, SmilePlus, Trash } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useReplyStore } from "@/store/reply-store";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import qs from "query-string";
@@ -31,6 +34,8 @@ interface ChatItemProps {
 	socketUrl: string;
 	socketQuery: Record<string, string>;
 	reactions: { id: string; emoji: string; memberId: string; member: Member & { profile: Profile } }[];
+	pinned?: boolean;
+	replyTo?: { id: string; content: string; deleted: boolean; member: Member & { profile: Profile } } | null;
 }
 
 const roleIconMap: Record<string, React.ReactNode | null> = {
@@ -55,9 +60,13 @@ export function ChatItem({
 	socketUrl,
 	socketQuery,
 	reactions: initialReactions,
+	pinned = false,
+	replyTo = null,
 }: ChatItemProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [reactions, setReactions] = useState(initialReactions);
+	const setReply = useReplyStore((s) => s.setReply);
+	const chatId = socketQuery.channelId;
 
 	useEffect(() => {
 		setReactions(initialReactions);
@@ -71,6 +80,7 @@ export function ChatItem({
 	const isOwner = currentMember.id === member.id;
 	const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner);
 	const canEditMessage = !deleted && isOwner && !fileUrl;
+	const canPinMessage = !deleted && (isAdmin || isModerator || isOwner);
 	const isPDF = fileUrl?.endsWith(".pdf") && fileUrl;
 	const isImage = fileUrl && !isPDF;
 
@@ -135,6 +145,24 @@ export function ChatItem({
 		}
 	};
 
+	const onPinToggle = async () => {
+		try {
+			const url = qs.stringifyUrl({ url: `${socketUrl}/${id}`, query: socketQuery });
+			await axios.patch(url, { pinned: !pinned });
+		} catch (error) {
+			console.error(error);
+		}
+	};
+
+	const onReply = () => {
+		if (!chatId) return;
+		setReply(chatId, {
+			id,
+			name: member.profile.name,
+			content: deleted ? "message" : content,
+		});
+	};
+
 	const groupedReactions = Object.values(
 		reactions.reduce<Record<string, { emoji: string; count: number; mine: boolean }>>((acc, r) => {
 			acc[r.emoji] = acc[r.emoji] || { emoji: r.emoji, count: 0, mine: false };
@@ -156,6 +184,20 @@ export function ChatItem({
 					<UserAvatar src={member.profile.imageUrl ?? undefined} />
 				</div>
 				<div className="flex flex-col w-full">
+					{replyTo && (
+						<div className="flex items-center gap-x-1 mb-1 text-xs text-zinc-500 dark:text-zinc-400">
+							<Reply className="w-3 h-3 rotate-180 shrink-0" />
+							<span className="font-semibold">{replyTo.member?.profile?.name}</span>
+							<span className="truncate max-w-[320px] opacity-80">
+								{replyTo.deleted ? "message was deleted" : replyTo.content}
+							</span>
+						</div>
+					)}
+					{pinned && (
+						<div className="flex items-center gap-x-1 mb-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+							<Pin className="w-3 h-3" /> Pinned
+						</div>
+					)}
 					<div className="flex items-center gap-x-2">
 						<div className="flex items-center">
 							<p onClick={onMemberClick} className="font-semibold text-sm hover:underline cursor-pointer">
@@ -186,17 +228,23 @@ export function ChatItem({
 						</a>
 					)}
 					{!fileUrl && !isEditing && (
-						<p
+						<div
 							className={cn(
 								"text-sm text-zinc-600 dark:text-zinc-300",
 								deleted && "italic text-zinc-500 dark:text-zinc-400 text-xs mt-1"
 							)}
 						>
-							{content}
+							{deleted ? (
+								content
+							) : (
+								<div className="prose prose-sm dark:prose-invert max-w-none break-words prose-p:my-0 prose-pre:my-1 prose-pre:bg-zinc-200/70 dark:prose-pre:bg-zinc-900/60 prose-code:text-indigo-500 dark:prose-code:text-indigo-300">
+									<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+								</div>
+							)}
 							{isUpdated && !deleted && (
 								<span className="text-[10px] text-zinc-500 dark:text-zinc-400 ">(edited)</span>
 							)}
-						</p>
+						</div>
 					)}
 					{groupedReactions.length > 0 && (
 						<div className="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -253,6 +301,29 @@ export function ChatItem({
 				</div>
 			</div>
 			<div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm">
+				{!deleted && (
+					<ActionTooltip label="Reply">
+						<Reply
+							onClick={onReply}
+							className="cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+						/>
+					</ActionTooltip>
+				)}
+				{canPinMessage && (
+					<ActionTooltip label={pinned ? "Unpin" : "Pin"}>
+						{pinned ? (
+							<PinOff
+								onClick={onPinToggle}
+								className="cursor-pointer w-4 h-4 text-amber-600 dark:text-amber-400 transition"
+							/>
+						) : (
+							<Pin
+								onClick={onPinToggle}
+								className="cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+							/>
+						)}
+					</ActionTooltip>
+				)}
 				{!deleted && (
 					<ActionTooltip label="Add Reaction">
 						<div className="cursor-pointer h-5 w-5 flex items-center justify-center">

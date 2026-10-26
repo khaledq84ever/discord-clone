@@ -9,7 +9,7 @@ export async function PATCH(req: Request, props: { params: Promise<{ memberId: s
     try {
 		const profile = await getCurrentProfile();
         const {searchParams} = new URL(req.url);
-        const {role} = await req.json();
+        const {role, banned} = await req.json();
         const serverId = searchParams.get("serverId");
 		if (!profile) {
 			return new NextResponse("Unauthorized", { status: 401 });
@@ -31,13 +31,12 @@ export async function PATCH(req: Request, props: { params: Promise<{ memberId: s
                     update: {
                         where: {
                             id: params.memberId,
-                            profileId:{ // To prevent the current login user to change their own role
+                            profileId:{ // To prevent the current login user to change their own role/ban state
                                 not : profile.id
                             }
                         },
-                        data: {
-                            role,
-                        },
+                        // Feature: ban/unban toggles `banned`; otherwise this is a role change.
+                        data: banned !== undefined ? { banned: Boolean(banned) } : { role },
                     },
                 },
 			},

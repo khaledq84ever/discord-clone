@@ -38,6 +38,7 @@ export async function GET(req: Request) {
                     },
                 },
                 reactions: { include: { member: { include: { profile: true } } } },
+                replyTo: { include: { member: { include: { profile: true } } } },
             },
             orderBy: {
                 createdAt: "desc"
@@ -56,6 +57,7 @@ export async function GET(req: Request) {
                     },
                 },
                 reactions: { include: { member: { include: { profile: true } } } },
+                replyTo: { include: { member: { include: { profile: true } } } },
             },
             orderBy: {
                 createdAt: "desc"

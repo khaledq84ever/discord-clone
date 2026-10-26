@@ -18,7 +18,7 @@ import { useStore } from "@/store/store";
 import { ServerWithMembersWithProfiles } from "@/types/server";
 import { MemberRole } from "@/lib/prisma-enums";
 import axios from "axios";
-import { Check, Gavel, Loader2, MoreVertical, Shield, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
+import { Ban, Check, Gavel, Loader2, MoreVertical, Shield, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { useRouter } from "next/navigation";
 import qs from "query-string";
 import { useState } from "react";
@@ -48,6 +48,25 @@ export function ManageMembersModal() {
 				},
 			});
 			const res = await axios.patch(url, { role });
+			router.refresh();
+			onOpen("manageMembers", { server: res.data });
+		} catch (error) {
+			console.log(error);
+		} finally {
+			setLoadingId("");
+		}
+	};
+
+	const onBan = async (memberId: string, banned: boolean) => {
+		try {
+			setLoadingId(memberId);
+			const url = qs.stringifyUrl({
+				url: `/api/members/${memberId}`,
+				query: {
+					serverId: data.server.id,
+				},
+			});
+			const res = await axios.patch(url, { banned });
 			router.refresh();
 			onOpen("manageMembers", { server: res.data });
 		} catch (error) {
@@ -93,6 +112,9 @@ export function ManageMembersModal() {
 								<div className="text-sm font-semibold  gap-x-1 flex items-center">
 									{member.profile?.name}
 									{roleIconMap[member.role]}
+									{(member as any).banned && (
+										<span className="text-[10px] text-rose-500 font-semibold ml-1">(banned)</span>
+									)}
 								</div>
 								<p className="text-xs text-zinc-500">{member.profile.email}</p>
 							</div>
@@ -133,6 +155,12 @@ export function ManageMembersModal() {
 												</DropdownMenuPortal>
 											</DropdownMenuSub>
 											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												onClick={() => onBan(member.id, !(member as any).banned)}
+											>
+												<Ban className="mr-2 h-4 w-4" />
+												{(member as any).banned ? "Unban" : "Ban"}
+											</DropdownMenuItem>
 											<DropdownMenuItem
 												onClick={() => onKick(member.id)}
 											>

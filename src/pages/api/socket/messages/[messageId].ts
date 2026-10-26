@@ -98,6 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                         }
                     },
                     reactions: { include: { member: { include: { profile: true } } } },
+                    replyTo: { include: { member: { include: { profile: true } } } },
                 }
             })
         }
@@ -121,32 +122,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                 include: {
                     member: { include: { profile: true } },
                     reactions: { include: { member: { include: { profile: true } } } },
+                    replyTo: { include: { member: { include: { profile: true } } } },
                 },
             });
         }
         if(req.method === "PATCH"){
-            if(!isMessageOwner) {
-                return res.status(401).json({message: "Unauthorized"});
-            }
-            if (!content) {
-				return res.status(400).json({ message: "Content  is required" });
-			}
-            message = await prisma.message.update({
-                where:{
-                    id: messageId as string ,
-                },
-                data: {
-                    content
-                },
-                include:{
-                    member:{
-                        include:{
-                            profile:true,
-                        }
+            // Feature: pin/unpin. Owner, admin, or moderator (canModify checked above).
+            if (req.body.pinned !== undefined) {
+                message = await prisma.message.update({
+                    where:{
+                        id: messageId as string ,
                     },
-                    reactions: { include: { member: { include: { profile: true } } } },
+                    data: {
+                        pinned: Boolean(req.body.pinned),
+                    },
+                    include:{
+                        member:{
+                            include:{
+                                profile:true,
+                            }
+                        },
+                        reactions: { include: { member: { include: { profile: true } } } },
+                        replyTo: { include: { member: { include: { profile: true } } } },
+                    }
+                })
+            } else {
+                if(!isMessageOwner) {
+                    return res.status(401).json({message: "Unauthorized"});
                 }
-            })
+                if (!content) {
+                    return res.status(400).json({ message: "Content  is required" });
+                }
+                message = await prisma.message.update({
+                    where:{
+                        id: messageId as string ,
+                    },
+                    data: {
+                        content
+                    },
+                    include:{
+                        member:{
+                            include:{
+                                profile:true,
+                            }
+                        },
+                        reactions: { include: { member: { include: { profile: true } } } },
+                        replyTo: { include: { member: { include: { profile: true } } } },
+                    }
+                })
+            }
         }
 		const updateChannelKey = `chat:${channelId}:messages:update`;
 		res?.socket?.server?.io?.emit(updateChannelKey, message);
