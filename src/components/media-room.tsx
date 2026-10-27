@@ -66,7 +66,7 @@ export function MediaRoom({ serverId, chatId, video, audio }: MediaRoomProps) {
 			}}
 			// Use the default LiveKit theme for nice styles.
 			data-lk-theme="default"
-			className="flex flex-col flex-1 h-[80%]"
+			className="flex flex-col flex-1 min-h-0"
 		>
 			{/* Your custom component with basic video conferencing functionality. */}
 			<MyVideoConference />

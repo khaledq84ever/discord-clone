@@ -9,6 +9,28 @@ body,
 	height: 100%;
 }
 
+/* Mobile browsers: 100% includes the area behind the URL bar; dvh tracks the visible viewport. */
+@supports (height: 100dvh) {
+	html,
+	body {
+		height: 100dvh;
+	}
+}
+
+body {
+	overscroll-behavior-y: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari zooms the page when focusing inputs under 16px. */
+@media (max-width: 767px) {
+	input,
+	textarea,
+	select {
+		font-size: 16px !important;
+	}
+}
+
 :root {
 	--background: 0 0% 100%;
 	--foreground: 20 14.3% 4.1%;

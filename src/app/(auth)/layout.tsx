@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-	return <div className="flex h-screen justify-center items-center">{children}</div>;
+	return <div className="flex min-h-full justify-center items-center px-6 py-10">{children}</div>;
 }

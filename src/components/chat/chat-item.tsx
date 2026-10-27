@@ -15,6 +15,7 @@ import { Edit, FileText, Pin, PinOff, Reply, ShieldAlert, ShieldCheck, SmilePlus
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useReplyStore } from "@/store/reply-store";
+import { useActiveMessage } from "@/store/active-message-store";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import qs from "query-string";
@@ -67,6 +68,9 @@ export function ChatItem({
 	const [reactions, setReactions] = useState(initialReactions);
 	const setReply = useReplyStore((s) => s.setReply);
 	const chatId = socketQuery.channelId;
+	const isActive = useActiveMessage((s) => s.id === id);
+	const toggleActive = useActiveMessage((s) => s.toggle);
+	const clearActive = useActiveMessage((s) => s.clear);
 
 	useEffect(() => {
 		setReactions(initialReactions);
@@ -155,6 +159,7 @@ export function ChatItem({
 	};
 
 	const onReply = () => {
+		clearActive();
 		if (!chatId) return;
 		setReply(chatId, {
 			id,
@@ -178,17 +183,27 @@ export function ChatItem({
 	}
 
 	return (
-		<div className="relative group flex items-center hover:bg-black/5 p-4 transition w-full">
+		<div
+			onClick={(e) => {
+				// Only plain taps on the message body; links, buttons and inputs keep their own behaviour.
+				if ((e.target as HTMLElement).closest("a,button,input,textarea,svg,[role=dialog]")) return;
+				toggleActive(id);
+			}}
+			className={cn(
+				"relative group flex items-center hover:bg-black/5 px-3 py-2 md:p-4 transition w-full",
+				isActive && "bg-black/5 dark:bg-white/5"
+			)}
+		>
 			<div className="group flex gap-x-2 items-start w-full">
 				<div onClick={onMemberClick} className="transition cursor-pointer hover:drop-shadow-md">
-					<UserAvatar src={member.profile.imageUrl ?? undefined} />
+					<UserAvatar src={member.profile.imageUrl ?? undefined} name={member.profile.name} />
 				</div>
-				<div className="flex flex-col w-full">
+				<div className="flex flex-col w-full min-w-0">
 					{replyTo && (
 						<div className="flex items-center gap-x-1 mb-1 text-xs text-zinc-500 dark:text-zinc-400">
 							<Reply className="w-3 h-3 rotate-180 shrink-0" />
 							<span className="font-semibold">{replyTo.member?.profile?.name}</span>
-							<span className="truncate max-w-[320px] opacity-80">
+							<span className="truncate max-w-[55vw] md:max-w-[320px] opacity-80">
 								{replyTo.deleted ? "message was deleted" : replyTo.content}
 							</span>
 						</div>
@@ -198,21 +213,21 @@ export function ChatItem({
 							<Pin className="w-3 h-3" /> Pinned
 						</div>
 					)}
-					<div className="flex items-center gap-x-2">
-						<div className="flex items-center">
-							<p onClick={onMemberClick} className="font-semibold text-sm hover:underline cursor-pointer">
+					<div className="flex items-center gap-x-2 min-w-0">
+							<div className="flex items-center min-w-0">
+							<p onClick={onMemberClick} className="font-semibold text-sm hover:underline cursor-pointer truncate">
 								{member.profile.name}
 							</p>
 							<ActionTooltip label={member.role}>{roleIconMap[member.role]}</ActionTooltip>
 						</div>
-						<span className="text-xs text-zinc-500 dark:text-zinc-400">{timestamp}</span>
+						<span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">{timestamp}</span>
 					</div>
 					{isImage && (
 						<a
 							href={fileUrl}
 							target="_blank"
 							rel="noreferrer noopener"
-							className="relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48"
+							className="relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-40 w-40 md:h-48 md:w-48"
 						>
 							<Image src={fileUrl} alt={content} fill className="object-cover" />
 						</a>
@@ -222,7 +237,7 @@ export function ChatItem({
 							href={fileUrl}
 							target="_blank"
 							rel="noreferrer noopener"
-							className="relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48"
+							className="relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-40 w-40 md:h-48 md:w-48"
 						>
 							<FileText className="w-12 h-12 text-zinc-500 dark:text-zinc-400 m-auto" />
 						</a>
@@ -293,14 +308,26 @@ export function ChatItem({
 									Save
 								</Button>
 							</form>
-							<span className="mt-1 text-[10px] text-zinc-400">
+							<span className="mt-1 text-[10px] text-zinc-400 hidden md:inline">
 								Press escape to cancel , enter to save
 							</span>
+							<button
+								type="button"
+								onClick={() => setIsEditing(false)}
+								className="mt-1 text-xs text-zinc-500 underline md:hidden"
+							>
+								Cancel
+							</button>
 						</Form>
 					)}
 				</div>
 			</div>
-			<div className="hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 border rounded-sm">
+			<div
+				className={cn(
+					"hidden group-hover:flex items-center gap-x-4 md:gap-x-2 absolute px-3 py-2 md:p-1 -top-4 md:-top-2 right-2 md:right-5 bg-white dark:bg-zinc-800 border rounded-md md:rounded-sm shadow-sm z-10 [&_svg]:w-5 [&_svg]:h-5 md:[&_svg]:w-4 md:[&_svg]:h-4",
+					isActive && "flex"
+				)}
+			>
 				{!deleted && (
 					<ActionTooltip label="Reply">
 						<Reply
@@ -334,7 +361,10 @@ export function ChatItem({
 				{canEditMessage && (
 					<ActionTooltip label="Edit">
 						<Edit
-							onClick={() => setIsEditing(true)}
+							onClick={() => {
+								clearActive();
+								setIsEditing(true);
+							}}
 							className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
 						/>
 					</ActionTooltip>
@@ -342,9 +372,10 @@ export function ChatItem({
 				{canDeleteMessage && (
 					<ActionTooltip label="Delete">
 						<Trash
-							onClick={() =>
-								onOpen("deleteMessage", { apiUrl: `${socketUrl}/${id}`, query: socketQuery })
-							}
+							onClick={() => {
+								clearActive();
+								onOpen("deleteMessage", { apiUrl: `${socketUrl}/${id}`, query: socketQuery });
+							}}
 							className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
 						/>
 					</ActionTooltip>

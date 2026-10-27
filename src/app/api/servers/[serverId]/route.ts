@@ -24,7 +24,8 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ serverI
 			data: {
 				inviteCode: uuidv4(),
 				name,
-				imageUrl,
+				imageUrl: imageUrl || null,
+
 			},
 		});
 

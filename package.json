@@ -13,6 +13,7 @@
 		"start": "next start",
 		"serve": "NODE_ENV=production node server.mjs",
 		"lint": "eslint .",
+		"test:e2e": "node scripts/e2e.mjs",
 		"setup": "npx prisma migrate dev -n initial-setup && npx prisma db seed",
 		"postinstall": "prisma generate"
 	},

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LOCAL_USER_COOKIE } from "@/lib/local-user-shared";
+import { prisma } from "@/lib/prismadb";
 import crypto from "node:crypto";
 
 export async function POST(req: NextRequest) {
@@ -9,10 +10,17 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Enter a valid name (max 40 chars)" }, { status: 400 });
 	}
 
-	const user = {
+		const user = {
 		id: crypto.randomUUID(),
 		name,
 	};
+
+	// Create the profile now: the (main) layout's sidebar reads it in parallel with the
+	// page, so creating it lazily on "/" bounced first-time users back to /sign-in.
+	await prisma.profile.create({
+		data: { userId: user.id, name, email: `${user.id.slice(0, 10)}@local.dev`, imageUrl: null },
+	});
+
 
 	const res = NextResponse.json({ ok: true });
 	res.cookies.set(LOCAL_USER_COOKIE, encodeURIComponent(JSON.stringify(user)), {

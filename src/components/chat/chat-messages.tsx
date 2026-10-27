@@ -39,8 +39,9 @@ export function ChatMessages({
 	type,
 }: ChatMessagesProps) {
 	const queryKey = `chat:${chatId}`;
-	const addKey = `chat:${chatId}/messages`;
-	const updateKey = `chat:${chatId}/messages:update`;
+	// Must match the keys the API routes emit (`chat:<id>:messages[:update]`).
+	const addKey = `chat:${chatId}:messages`;
+	const updateKey = `chat:${chatId}:messages:update`;
 	const chatRef = useRef<ElementRef<"div">>(null);
 
 	useEffect(() => {
@@ -55,7 +56,8 @@ export function ChatMessages({
 		queryKey: `chat:${chatId}`,
 	});
 
-	const latestMessageId = data?.pages?.[0]?.items?.[data?.pages?.[0]?.items?.length - 1]?.id;
+	// Newest message is first (API orders by createdAt desc).
+	const latestMessageId = data?.pages?.[0]?.items?.[0]?.id;
 
 	useChatSocket({ queryKey, addKey, updateKey, chatId });
 
@@ -85,7 +87,7 @@ export function ChatMessages({
 		);
 	}
 	return (
-		<div ref={chatRef} className="flex-1  flex flex-col py-4 overflow-y-auto">
+		<div ref={chatRef} className="flex-1 min-h-0 flex flex-col py-2 md:py-4 overflow-y-auto overscroll-contain">
 			{!hasNextPage && <div className="flex-1" />}
 			{!hasNextPage && <ChatWelcome type={type} name={name} />}
 			{hasNextPage && (

@@ -49,10 +49,16 @@ export const useChatSocket = ({ addKey, updateKey, queryKey, chatId }: ChatSocke
 						],
 					};
 				}
+				// Pages are newest-first (the list renders reversed), so new messages go in front.
+				// Skip it if a poll already brought it in.
+				const exists = oldData.pages.some((page: any) =>
+					page.items.some((item: MessageWithMemberWithProfile) => item.id === message.id)
+				);
+				if (exists) return oldData;
 				const newData = [...oldData.pages];
 				newData[0] = {
 					...newData[0],
-					items: [...newData[0].items, message],
+					items: [message, ...newData[0].items],
 				};
 				return { ...oldData, pages: newData };
 			});

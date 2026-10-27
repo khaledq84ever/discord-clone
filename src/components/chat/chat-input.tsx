@@ -88,7 +88,7 @@ export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)}>
 				{replyTarget && (
-					<div className="mx-4 mt-2 flex items-center justify-between rounded-t-md bg-zinc-200/80 dark:bg-zinc-700/70 px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+					<div className="mx-3 md:mx-4 mt-2 flex items-center justify-between rounded-t-md bg-zinc-200/80 dark:bg-zinc-700/70 px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-300">
 						<span className="flex items-center gap-x-1 truncate">
 							<Reply className="w-3 h-3 rotate-180 shrink-0" />
 							Replying to <span className="font-semibold">{replyTarget.name}</span>
@@ -108,25 +108,30 @@ export function ChatInput({ apiUrl, query, name, type }: ChatInputProps) {
 					render={({ field }) => (
 						<FormItem>
 							<FormControl>
-								<div className="relative p-4 pb-6">
+								<div className="px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-4 md:pb-6">
+								<div className="relative">
 									<button
 										type="button"
+										aria-label="Attach file"
 										onClick={() =>onOpen("messageFile", { apiUrl,query })}
-										className="absolute top-7 left-8 h-[24px] w-[24px] bg-zinc-500 dark:bg-zinc-400 hover:bg-zinc-600 dark:hover:bg-zinc-300 transition rounded-full p-1 flex items-center justify-center"
+										className="absolute top-1/2 -translate-y-1/2 left-3 md:left-4 h-[24px] w-[24px] bg-zinc-500 dark:bg-zinc-400 hover:bg-zinc-600 dark:hover:bg-zinc-300 transition rounded-full p-1 flex items-center justify-center"
 									>
 										<Plus className="text-white dark:text-[#313338]" />
 									</button>
 									<Input
 										disabled={isLoading}
-										className="px-14 py-6 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200"
+										autoComplete="off"
+										enterKeyHint="send"
+										className="pl-12 pr-12 md:px-14 py-5 md:py-6 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200"
 										placeholder={`Message ${type === "conversation" ? name : "#" + name}`}
 										{...field}
 									/>
-									<div className="absolute top-7 right-8">
+									<div className="absolute top-1/2 -translate-y-1/2 right-3 md:right-4 flex">
 										<EmojiPicker onChange={
 											(value) => form.setValue("content", field.value + " " + value)
 										} />
 									</div>
+								</div>
 								</div>
 							</FormControl>
 						</FormItem>

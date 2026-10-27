@@ -64,7 +64,7 @@ export function MessageFileModal() {
 	};
 	return (
 		<Dialog open={isModalOpen} onOpenChange={handleClose}>
-			<DialogContent className="bg-white text-black p-0 overflow-hidden">
+			<DialogContent className="bg-white text-black p-0 overflow-y-auto">
 				<DialogHeader className="pt-8 px-6">
 					<DialogTitle className="text-2xl text-center font-bold">Add an Attachment</DialogTitle>
 					<DialogDescription className="text-center text-zinc-500">
@@ -85,7 +85,7 @@ export function MessageFileModal() {
 													<div className="relative h-20 w-20">
 														<Image
 															fill
-															objectFit="cover"
+															style={{ objectFit: "cover" }}
 															src={field.value}
 															className="rounded-full"
 															alt="Server Image"
@@ -118,7 +118,6 @@ export function MessageFileModal() {
 														onClientUploadComplete={(res) => {
 															field.onChange(res?.[0].url);
 															console.log("Files: ", res);
-															alert("Upload Completed");
 														}}
 													/>
 												) : (

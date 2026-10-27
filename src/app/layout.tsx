@@ -4,7 +4,7 @@ import { QueryProvider } from "@/contexts/query-provider";
 import { SocketProvider } from "@/contexts/socket-provider";
 import { ThemeProvider } from "@/contexts/theme-provider";
 import { cn } from "@/lib/utils";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 
 const open_sans = Open_Sans({ subsets: ["latin"] });
@@ -15,6 +15,19 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: "website",
 	},
+};
+
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	// Let content extend under the notch / home indicator; padding uses env(safe-area-inset-*).
+	viewportFit: "cover",
+	// Shrink the layout viewport when the on-screen keyboard opens so the chat input stays visible.
+	interactiveWidget: "resizes-content",
+	themeColor: [
+		{ media: "(prefers-color-scheme: light)", color: "#ffffff" },
+		{ media: "(prefers-color-scheme: dark)", color: "#313338" },
+	],
 };
 
 export default function RootLayout({

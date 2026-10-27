@@ -1,4 +1,4 @@
-import { Channel, Server } from "@/generated/prisma/client";
+import { Channel, Profile, Server } from "@/generated/prisma/client";
 import { ChannelType } from "@/lib/prisma-enums";import { StateCreator } from "zustand";
 
 export type ModalType =
@@ -12,10 +12,12 @@ export type ModalType =
 	| "editChannel"
 	| "deleteChannel"
 	| "messageFile"
-	| "deleteMessage";
+	| "deleteMessage"
+	| "editProfile";
 
 export interface ModelData {
 	server?: Server;
+	profile?: Profile;
 	channel?: Channel;
 	channelType?: ChannelType;
 	apiUrl?: string;

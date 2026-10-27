@@ -5,6 +5,9 @@ const nextConfig = {
 	// locate the bindings file" 500 on server-side queries).
 	serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3", "bindings"],
 	images: {
+		// Uploads land in public/uploads at runtime, which the optimizer can't see (400),
+		// and they are already resized client-side before upload.
+		unoptimized: true,
 		remotePatterns: [
 			{
 				protocol: "https",

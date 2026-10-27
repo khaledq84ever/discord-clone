@@ -33,7 +33,8 @@ export function EditServerModal() {
 
 	const schema = z.object({
 		name: z.string().min(1, { message: "Server name is required" }),
-		imageUrl: z.string().min(1, { message: "Image URL is invalid" }),
+		// Photo is optional; servers without one show their initials.
+		imageUrl: z.string(),
 	});
 	const form = useForm({
 		resolver: zodResolver(schema),
@@ -76,11 +77,11 @@ export function EditServerModal() {
 	};
 	return (
 		<Dialog open={isModelOpen} onOpenChange={handleClose}>
-			<DialogContent className="bg-white text-black p-0 overflow-hidden">
+			<DialogContent className="bg-white text-black p-0 overflow-y-auto">
 				<DialogHeader className="pt-8 px-6">
 					<DialogTitle className="text-2xl text-center font-bold">Customize your server</DialogTitle>
 					<DialogDescription className="text-center text-zinc-500">
-						Give your sever a personality with a name and an image. You can always change these later.
+						Give your server a name and, optionally, a photo. You can always change these later.
 					</DialogDescription>
 				</DialogHeader>
 				<Form {...form}>
@@ -97,7 +98,7 @@ export function EditServerModal() {
 													<div className="relative h-20 w-20">
 														<Image
 															fill
-															objectFit="cover"
+															style={{ objectFit: "cover" }}
 															src={field.value}
 															className="rounded-full"
 															alt="Server Image"
@@ -134,12 +135,9 @@ export function EditServerModal() {
 														onClientUploadComplete={(res) => {
 															field.onChange(res?.[0].url);
 															console.log("Files: ", res);
-															alert("Upload Completed");
 														}}
 														onUploadError={(error: Error) => {
 															console.log("UploadthingERROR\n", error.message);
-
-															alert(`ERROR! ${error.message}`);
 														}}
 														onUploadBegin={(name) => {
 															// Do something once upload begins
@@ -167,6 +165,7 @@ export function EditServerModal() {
 												disabled={isLoading}
 												className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
 												placeholder="Enter server name"
+												autoComplete="off"
 												{...field}
 											/>
 										</FormControl>
