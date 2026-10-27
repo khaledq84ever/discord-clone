@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 	const [channel, conversation] = await Promise.all([
 		prisma.channel.findFirst({
-			where: { id: room, server: { members: { some: { profileId: profile.id } } } },
+			where: { id: room, server: { members: { some: { profileId: profile.id, banned: false } } } },
 			select: { id: true },
 		}),
 		prisma.conversation.findFirst({

@@ -19,6 +19,26 @@ export async function GET(req: Request) {
 	if(!channelId){
         return new NextResponse("Channel ID is required", { status: 400 });
     }
+
+    // Only a non-banned member of the channel's server may read its messages.
+    const channelAccess = await prisma.channel.findUnique({
+        where: { id: channelId },
+        select: {
+            server: {
+                select: {
+                    members: {
+                        where: { profileId: profile.id },
+                        select: { banned: true },
+                    },
+                },
+            },
+        },
+    });
+    const membership = channelAccess?.server?.members[0];
+    if (!membership || membership.banned) {
+        return new NextResponse("Forbidden", { status: 403 });
+    }
+
     let messages: Message[] = [];
 
     if(cursor){

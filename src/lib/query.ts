@@ -57,8 +57,11 @@ export async function getServer(id: string, profileId: string) {
 		where: {
 			id,
 			members: {
+				// Banned members are treated as non-members for access: they can't
+				// open the server, and it drops off their server list.
 				some: {
 					profileId,
+					banned: false,
 				},
 			},
 		},
@@ -88,6 +91,7 @@ export async function getGeneralServer(id: string, profileId: string) {
 			members: {
 				some: {
 					profileId,
+					banned: false,
 				},
 			},
 		},
@@ -112,6 +116,7 @@ export async function getAllServers(id: string) {
 			members: {
 				some: {
 					profileId: id,
+					banned: false,
 				},
 			},
 		},
@@ -125,6 +130,7 @@ export async function getFirstServer(id: string) {
 			members: {
 				some: {
 					profileId: id,
+					banned: false,
 				},
 			},
 		},
