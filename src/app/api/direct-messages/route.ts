@@ -36,6 +36,7 @@ export async function GET(req: Request) {
 							profile: true,
 						},
 					},
+					reactions: { include: { member: { include: { profile: true } } } },
 				},
 				orderBy: {
 					createdAt: "desc",
@@ -53,6 +54,7 @@ export async function GET(req: Request) {
 							profile: true,
 						},
 					},
+					reactions: { include: { member: { include: { profile: true } } } },
 				},
 				orderBy: {
 					createdAt: "desc",

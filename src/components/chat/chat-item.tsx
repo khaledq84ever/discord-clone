@@ -169,13 +169,27 @@ export function ChatItem({
 	};
 
 	const groupedReactions = Object.values(
-		reactions.reduce<Record<string, { emoji: string; count: number; mine: boolean }>>((acc, r) => {
-			acc[r.emoji] = acc[r.emoji] || { emoji: r.emoji, count: 0, mine: false };
+		reactions.reduce<Record<string, { emoji: string; count: number; mine: boolean; names: string[] }>>((acc, r) => {
+			acc[r.emoji] = acc[r.emoji] || { emoji: r.emoji, count: 0, mine: false, names: [] };
 			acc[r.emoji].count += 1;
 			if (r.memberId === currentMember.id) acc[r.emoji].mine = true;
+			const who = r.memberId === currentMember.id ? "You" : r.member?.profile?.name;
+			if (who) acc[r.emoji].names.push(who);
 			return acc;
 		}, {})
 	);
+
+	// "Alice, Bob and Carol reacted with 👍" — tooltip for each pill.
+	const reactorLabel = (names: string[], emoji: string) => {
+		const who =
+			names.length <= 1
+				? names[0] ?? "Someone"
+				: `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+		return `${who} reacted with ${emoji}`;
+	};
+
+	// A couple of common emoji for one-click reacting without opening the picker.
+	const QUICK_REACTIONS = ["👍", "❤️", "😂", "🎉"];
 
 	const onMemberClick = () => {
 		if(member?.id === currentMember.id) return;
@@ -264,8 +278,8 @@ export function ChatItem({
 					{groupedReactions.length > 0 && (
 						<div className="flex flex-wrap items-center gap-1.5 mt-1.5">
 							{groupedReactions.map((r) => (
+								<ActionTooltip key={r.emoji} label={reactorLabel(r.names, r.emoji)}>
 								<button
-									key={r.emoji}
 									onClick={() => toggleReaction(r.emoji)}
 									className={cn(
 										"flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border transition",
@@ -277,6 +291,7 @@ export function ChatItem({
 									<span>{r.emoji}</span>
 									<span className="font-semibold">{r.count}</span>
 								</button>
+								</ActionTooltip>
 							))}
 						</div>
 					)}
@@ -350,6 +365,21 @@ export function ChatItem({
 							/>
 						)}
 					</ActionTooltip>
+				)}
+				{!deleted && (
+					<div className="hidden md:flex items-center gap-x-0.5">
+						{QUICK_REACTIONS.map((emoji) => (
+							<button
+								key={emoji}
+								type="button"
+								onClick={() => toggleReaction(emoji)}
+								className="h-5 w-5 flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 text-sm leading-none transition"
+								aria-label={`React ${emoji}`}
+							>
+								{emoji}
+							</button>
+						))}
+					</div>
 				)}
 				{!deleted && (
 					<ActionTooltip label="Add Reaction">

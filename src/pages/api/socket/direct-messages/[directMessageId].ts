@@ -6,7 +6,7 @@ import { MemberRole } from "@/lib/prisma-enums";
 
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
-	if (req.method !== "DELETE" && req.method !== "PATCH") {
+	if (req.method !== "DELETE" && req.method !== "PATCH" && req.method !== "PUT") {
 		return res.status(405).json({ message: "Method not allowed" });
 	}
 	try {
@@ -70,12 +70,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 						profile: true,
 					},
 				},
+				reactions: { include: { member: { include: { profile: true } } } },
 			},
 		});
 
         if (!directMessage || directMessage.deleted) {
 			return res.status(404).json({ message: "Message not found" });
 		}
+
+        // Reactions: any member of the conversation may react (not owner-gated).
+        if (req.method === "PUT") {
+            const { emoji } = req.body;
+            if (!emoji) {
+                return res.status(400).json({ message: "Emoji is required" });
+            }
+            const existingReaction = await prisma.directMessageReaction.findFirst({
+                where: { directMessageId: directMessage.id, memberId: member.id, emoji },
+            });
+            if (existingReaction) {
+                await prisma.directMessageReaction.delete({ where: { id: existingReaction.id } });
+            } else {
+                await prisma.directMessageReaction.create({
+                    data: { directMessageId: directMessage.id, memberId: member.id, emoji },
+                });
+            }
+            const updated = await prisma.directMessage.findFirst({
+                where: { id: directMessage.id },
+                include: {
+                    member: { include: { profile: true } },
+                    reactions: { include: { member: { include: { profile: true } } } },
+                },
+            });
+            const updateChannelKey = `chat:${conversationId}:messages:update`;
+            res?.socket?.server?.io?.emit(updateChannelKey, updated);
+            return res.status(200).json(updated);
+        }
 
         const isMessageOwner = directMessage.memberId === member.id
         const isAdmin = member.role === MemberRole.ADMIN
@@ -103,6 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 							profile: true,
 						},
 					},
+					reactions: { include: { member: { include: { profile: true } } } },
 				},
 			});
         }
@@ -126,6 +156,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 							profile: true,
 						},
 					},
+					reactions: { include: { member: { include: { profile: true } } } },
 				},
 			});
         }
