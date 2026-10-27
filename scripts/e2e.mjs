@@ -229,6 +229,7 @@ await step("server page redirects to #general and renders on mobile", async () =
 	state.channelId = match[1];
 	assert(html.includes('aria-label="Open navigation"'), "mobile nav toggle missing");
 	assert(html.includes('aria-label="Show members"'), "mobile members toggle missing");
+	assert(html.includes('aria-label="User settings"'), "user settings button missing");
 	assert(html.includes(`Alice R ${RUN}`) || html.includes(state.avatarUrl), "alice's profile not shown");
 });
 
@@ -308,6 +309,34 @@ await step("outsider cannot read the channel's messages", async () => {
 	await eve.page("/"); // creates eve's profile
 	const res = await eve.request(`/api/socket/messages?${query()}`, { method: "POST", json: { content: "intrude" } });
 	assert(res.status === 404, `outsider send → ${res.status}`);
+});
+
+console.log("\nVoice / video");
+await step("voice token requires sign-in", async () => {
+	const res = await new Client("anon").request(`/api/get-participant-token?room=${state.channelId}`);
+	assert(res.status === 401, `expected 401, got ${res.status}`);
+});
+
+await step("voice token is refused for rooms you're not in", async () => {
+	const eve = new Client("eve2");
+	await eve.request("/api/local-auth", { method: "POST", json: { name: `Eve2 ${RUN}` } });
+	const res = await eve.request(`/api/get-participant-token?room=${state.channelId}`);
+	assert(res.status === 404, `expected 404, got ${res.status}`);
+});
+
+await step("member gets a voice token bound to their own profile", async () => {
+	const res = await bob.request(`/api/get-participant-token?room=${state.channelId}`);
+	assert(res.ok, `status ${res.status}`);
+	const { token } = await res.json();
+	const claims = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
+	assert(claims.name === `Bob ${RUN}`, `name claim ${claims.name}`);
+	assert(claims.sub && !claims.sub.includes(" "), `identity should be the profile id, got ${claims.sub}`);
+	assert(claims.video?.room === state.channelId && claims.video?.roomJoin, "room grant missing");
+});
+
+await step("LiveKit signaling is reachable through the app at /livekit", async () => {
+	const res = await fetch(`${BASE}/livekit/`);
+	assert(res.ok && (await res.text()).trim() === "OK", `status ${res.status}`);
 });
 
 console.log("\nCleanup");
