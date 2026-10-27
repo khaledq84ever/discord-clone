@@ -391,6 +391,52 @@ await step("unban restores access", async () => {
 	assert(send.status === 201, `unbanned send → ${send.status}`);
 });
 
+console.log("\nDirect message reactions");
+await step("a member can react to a direct message (was 405)", async () => {
+	assert(state.bobMemberId, "bob's member id was not captured");
+	// Open the DM with bob as alice so the conversation is created, and lift its id.
+	const { html } = await alice.page(`/servers/${state.server.id}/conversations/${state.bobMemberId}`);
+	const cid = html.match(/conversationId[\\":\s]+?(c[a-z0-9]{20,})/i)?.[1];
+	assert(cid, "could not find conversationId on the conversation page");
+	state.conversationId = cid;
+
+	const sent = await alice.request(`/api/socket/direct-messages?conversationId=${cid}`, {
+		method: "POST",
+		json: { content: `dm hello ${RUN}` },
+	});
+	assert(sent.status === 201, `DM send → ${sent.status}`);
+	const dm = await sent.json();
+
+	// Bob is the OTHER member, not the message owner — this path used to 405.
+	const react = await bob.request(`/api/socket/direct-messages/${dm.id}?conversationId=${cid}`, {
+		method: "PUT",
+		json: { emoji: "🔥" },
+	});
+	assert(react.status === 200, `DM react → ${react.status}`);
+	const reacted = await react.json();
+	assert(
+		reacted.reactions?.some((r) => r.emoji === "🔥" && r.member?.profile?.name === `Bob ${RUN}`),
+		"bob's DM reaction missing from response"
+	);
+});
+
+await step("direct message reaction persists and toggles off", async () => {
+	const cid = state.conversationId;
+	const list = await bob.request(`/api/direct-messages?conversationId=${cid}`);
+	assert(list.ok, `DM list → ${list.status}`);
+	const { items } = await list.json();
+	const dm = items.find((m) => m.content === `dm hello ${RUN}`);
+	assert(dm?.reactions?.some((r) => r.emoji === "🔥"), "DM reaction not persisted on fresh fetch");
+
+	const off = await bob.request(`/api/socket/direct-messages/${dm.id}?conversationId=${cid}`, {
+		method: "PUT",
+		json: { emoji: "🔥" },
+	});
+	assert(off.status === 200, `DM unreact → ${off.status}`);
+	const after = await off.json();
+	assert(!after.reactions?.some((r) => r.emoji === "🔥"), "DM reaction not removed on toggle");
+});
+
 console.log("\nCleanup");
 await step("delete the test server", async () => {
 	if (!state.server) return;

@@ -73,6 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 						profile: true,
 					},
 				},
+				reactions: { include: { member: { include: { profile: true } } } },
 			},
 		});
 

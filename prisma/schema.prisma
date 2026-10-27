@@ -53,6 +53,7 @@ model Member {
   server                 Server          @relation(fields: [serverId], references: [id], onDelete: Cascade)
   messages               Message[]
   reactions              Reaction[]
+  dmReactions            DirectMessageReaction[]
   conversationsInitiated Conversation[]  @relation("memberOne")
   conversationsReceived  Conversation[]  @relation("memberTwo")
   directMessages         DirectMessage[]
@@ -142,10 +143,23 @@ model DirectMessage {
   member         Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  reactions      DirectMessageReaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([conversationId])
   @@index([memberId])
+}
+
+model DirectMessageReaction {
+  id              String        @id @default(cuid())
+  emoji           String
+  memberId        String
+  member          Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  directMessageId String
+  directMessage   DirectMessage @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([directMessageId, memberId, emoji])
+  @@index([directMessageId])
 }
