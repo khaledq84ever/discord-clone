@@ -276,6 +276,7 @@ await step("bob replies; reply is linked to alice's message", async () => {
 	const reply = await res.json();
 	assert(reply.replyToId === state.message.id, "replyToId not saved");
 	assert(reply.member.profile.name === `Bob ${RUN}`, "bob's own name not on his message");
+	state.bobMemberId = reply.member.id;
 });
 
 await step("messages are saved on the server (fresh fetch, newest first)", async () => {
@@ -337,6 +338,57 @@ await step("member gets a voice token bound to their own profile", async () => {
 await step("LiveKit signaling is reachable through the app at /livekit", async () => {
 	const res = await fetch(`${BASE}/livekit/`);
 	assert(res.ok && (await res.text()).trim() === "OK", `status ${res.status}`);
+});
+
+console.log("\nBan enforcement");
+await step("admin bans a member", async () => {
+	assert(state.bobMemberId, "bob's member id was not captured");
+	const res = await alice.request(`/api/members/${state.bobMemberId}?serverId=${state.server.id}`, {
+		method: "PATCH",
+		json: { banned: true },
+	});
+	assert(res.ok, `ban PATCH ${res.status}`);
+	const server = await res.json();
+	const bobMember = server.members.find((m) => m.id === state.bobMemberId);
+	assert(bobMember?.banned === true, "member not marked banned in response");
+});
+
+await step("banned member cannot send messages", async () => {
+	const res = await bob.request(`/api/socket/messages?${query()}`, { method: "POST", json: { content: `banned ${RUN}` } });
+	assert(res.status === 403, `banned send → ${res.status}`);
+});
+
+await step("banned member cannot read the channel's messages", async () => {
+	const res = await bob.request(`/api/messages?channelId=${state.channelId}`);
+	assert(res.status === 403, `banned read → ${res.status}`);
+});
+
+await step("banned member is denied a voice token", async () => {
+	const res = await bob.request(`/api/get-participant-token?room=${state.channelId}`);
+	assert(res.status === 404, `banned voice → ${res.status}`);
+});
+
+await step("banned member cannot open the server page", async () => {
+	const { path: landed } = await bob.page(`/servers/${state.server.id}`);
+	assert(!landed.startsWith(`/servers/${state.server.id}`), `banned member landed on ${landed}`);
+});
+
+await step("banned member cannot rejoin via the invite link", async () => {
+	const { path: landed } = await bob.page(`/invite/${state.server.inviteCode}`);
+	assert(!landed.startsWith("/servers/"), `banned rejoin landed on ${landed}`);
+	// Confirm the invite didn't silently re-add bob as a fresh, unbanned member.
+	const res = await bob.request(`/api/socket/messages?${query()}`, { method: "POST", json: { content: `rejoin ${RUN}` } });
+	assert(res.status === 403, `still-banned send → ${res.status}`);
+});
+
+await step("unban restores access", async () => {
+	const res = await alice.request(`/api/members/${state.bobMemberId}?serverId=${state.server.id}`, {
+		method: "PATCH",
+		json: { banned: false },
+	});
+	assert(res.ok, `unban PATCH ${res.status}`);
+	const send = await bob.request(`/api/socket/messages?${query()}`, { method: "POST", json: { content: `unbanned ${RUN}` } });
+	assert(send.status === 201, `unbanned send → ${send.status}`);
 });
 
 console.log("\nCleanup");

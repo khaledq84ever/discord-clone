@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prismadb";
-import { getCurrentProfile, getServerByInviteCode } from "@/lib/query";
+import { getCurrentProfile } from "@/lib/query";
 
 import { redirect } from "next/navigation";
 
@@ -13,29 +13,39 @@ export default async function InviteCodePage(props: { params: Promise<{ inviteCo
     if (!params.inviteCode) {
 		return redirect("/");
 	}
-    const existingServer = await getServerByInviteCode(params.inviteCode, profile.id);
 
-    if (existingServer) {
-		return redirect(`/servers/${existingServer.id}`);
-	}
-
-    const server = await prisma.server.update({
+    // Look up the invite's server plus this profile's membership (if any),
+    // so a banned member can't use the invite link to walk back in.
+    const server = await prisma.server.findUnique({
 		where: {
 			inviteCode: params.inviteCode,
 		},
-		data: {
+		include: {
 			members: {
-				create: [
-					{
-						profileId: profile.id,
-					},
-				],
+				where: { profileId: profile.id },
 			},
 		},
 	});
 
-    if (server) {
+    if (!server) {
+		return redirect("/");
+	}
+
+    const existingMembership = server.members[0];
+    if (existingMembership) {
+		if (existingMembership.banned) {
+			// Banned: don't let them rejoin or re-enter.
+			return redirect("/?error=banned");
+		}
 		return redirect(`/servers/${server.id}`);
 	}
-    return <div>page</div>;
+
+    await prisma.member.create({
+		data: {
+			profileId: profile.id,
+			serverId: server.id,
+		},
+	});
+
+    return redirect(`/servers/${server.id}`);
 }

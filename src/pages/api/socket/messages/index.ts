@@ -56,6 +56,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
         if(!member) {
             return res.status(404).json({message: "Member not found"});
         }
+        if(member.banned) {
+            return res.status(403).json({message: "You are banned from this server"});
+        }
 
         // Feature: reply-to. Only accept a replyToId that points at a
         // live (non-deleted) message in this same channel.

@@ -52,6 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 		if (!member) {
 			return res.status(404).json({ message: "Member not found" });
 		}
+		if (member.banned) {
+			return res.status(403).json({ message: "You are banned from this server" });
+		}
 
 		let message = await prisma.message.findFirst({
             where:{
