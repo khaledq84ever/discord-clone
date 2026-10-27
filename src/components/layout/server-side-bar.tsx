@@ -7,6 +7,7 @@ import { ServerSearch } from "@/components/server-search";
 import { ServerSection } from "@/components/server-section";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { UserPanel } from "@/components/user/user-panel";
 import { getCurrentProfile, getServer } from "@/lib/query";
 import { ChannelType, MemberRole } from "@/lib/prisma-enums";import { Hash, Mic, ShieldAlert, ShieldCheck, Video } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -45,7 +46,7 @@ export async function ServerSideBar({ serverId }: ServerSideBarProps) {
 
 	const role = server?.members?.find((member) => member.profileId === profile.id)?.role;
 	return (
-		<div className="flex flex-col space-y-4 items-center h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5] ">
+		<div className="flex flex-col space-y-4 items-center h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5] [&>:last-child]:!mt-0">
 			<ServerHeader server={server} role={role} />
 			<Separator className="h-[2px] bg-zinc-300 dark:bg-zinc-700 rounded-md w-10 mx-auto" />
 			<ScrollArea className="flex-1 w-full px-3">
@@ -146,7 +147,8 @@ export async function ServerSideBar({ serverId }: ServerSideBarProps) {
 						{members?.length > 0 && <MemberList server={{ ...server, members: members.map((m) => ({ ...m, profile: m.profile as any })) } as any} />}
 					</div>
 				)}
-			</ScrollArea>
+						</ScrollArea>
+			<UserPanel profile={profile} />
 		</div>
 	);
 }

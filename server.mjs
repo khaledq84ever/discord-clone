@@ -1,7 +1,8 @@
 import { EventEmitter } from "node:events";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
+import { connect as netConnect } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import next from "next";
@@ -61,7 +62,47 @@ async function serveUpload(req, res) {
 	}
 }
 
+// LiveKit signaling (HTTP + WebSocket) is proxied under /livekit so voice works through
+// the same origin/tunnel as the app. Media (WebRTC) still goes straight to LiveKit.
+const LIVEKIT_PREFIX = "/livekit";
+const LIVEKIT_PORT = Number(process.env.LIVEKIT_PORT || 7880);
+const isLivekit = (url) => url === LIVEKIT_PREFIX || url?.startsWith(`${LIVEKIT_PREFIX}/`) || url?.startsWith(`${LIVEKIT_PREFIX}?`);
+const livekitPath = (url) => url.slice(LIVEKIT_PREFIX.length) || "/";
+
+function proxyLivekitHttp(req, res) {
+	const upstream = httpRequest(
+		{ host: "127.0.0.1", port: LIVEKIT_PORT, method: req.method, path: livekitPath(req.url), headers: req.headers },
+		(upRes) => {
+			res.writeHead(upRes.statusCode ?? 502, upRes.headers);
+			upRes.pipe(res);
+		}
+	);
+	upstream.on("error", () => {
+		if (!res.headersSent) res.writeHead(502, { "Content-Type": "text/plain" });
+		res.end("voice server unavailable");
+	});
+	req.pipe(upstream);
+}
+
+function proxyLivekitUpgrade(req, socket, head) {
+	const upstream = netConnect(LIVEKIT_PORT, "127.0.0.1", () => {
+		let raw = `${req.method} ${livekitPath(req.url)} HTTP/${req.httpVersion}\r\n`;
+		for (let i = 0; i < req.rawHeaders.length; i += 2) raw += `${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`;
+		upstream.write(raw + "\r\n");
+		if (head?.length) upstream.write(head);
+		upstream.pipe(socket);
+		socket.pipe(upstream);
+	});
+	const close = () => {
+		upstream.destroy();
+		socket.destroy();
+	};
+	upstream.on("error", close);
+	socket.on("error", close);
+}
+
 const server = createServer(async (req, res) => {
+	if (isLivekit(req.url)) return proxyLivekitHttp(req, res);
 	if ((req.method === "GET" || req.method === "HEAD") && req.url?.startsWith("/uploads/")) {
 		if (await serveUpload(req, res)) return;
 	}
@@ -75,7 +116,8 @@ const io = new SocketIOServer(server, {
 
 const nextUpgrade = app.getUpgradeHandler();
 server.on("upgrade", (req, socket, head) => {
-	if (!req.url?.startsWith(SOCKET_PATH)) nextUpgrade(req, socket, head);
+	if (isLivekit(req.url)) proxyLivekitUpgrade(req, socket, head);
+	else if (!req.url?.startsWith(SOCKET_PATH)) nextUpgrade(req, socket, head);
 });
 
 const presence = new Map();
