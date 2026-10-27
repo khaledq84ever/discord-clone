@@ -1,44 +1,25 @@
-import { UserDetails } from "@/components/user/user-details";
 import { ModeToggle } from "@/components/mode-toggler";
-import { initProfile, getFirstServer } from "@/lib/query";
-import {InitialModel} from "@/components/modals/initial-model";
-import Image from "next/image";
+import { InitialModel } from "@/components/modals/initial-model";
+import { ProfileButton } from "@/components/user/profile-button";
+import { getFirstServer, initProfile } from "@/lib/query";
 
-
-
-
+// Landing page after sign-in. Users who already belong to a server are redirected
+// by getFirstServer; everyone else is asked to create their first server.
 export default async function Home() {
 	const profile = await initProfile();
-	console.log(profile);
-
-	const server = await getFirstServer(profile.id);
+	await getFirstServer(profile.id);
 
 	return (
-		<>
-			<main className="max-w-[75rem] w-full mx-auto">
-				<div className="grid grid-cols-[1fr_20.5rem] gap-10 pb-10">
-					<div>
-						<header className="flex items-center justify-between w-full h-16 gap-4">
-							<div className="flex gap-4">
-								<ModeToggle />
-							</div>
-							<div className="flex items-center gap-2">
-								<div className="size-6 rounded-full overflow-hidden">
-									<Image
-										src={profile.imageUrl || "/icon.png"}
-										alt="avatar"
-										width={24}
-										height={24}
-										className="size-6 object-cover"
-									/>
-								</div>
-							</div>
-						</header>
-						{!server && <InitialModel />}
-						<UserDetails />
-					</div>
-				</div>
-			</main>
-		</>
+		<main className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+			<div className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))]">
+				<ModeToggle />
+			</div>
+			<ProfileButton profile={profile} />
+			<h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">Welcome, {profile.name}</h1>
+			<p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
+				Create your first server to start chatting, or open an invite link from a friend.
+			</p>
+			<InitialModel />
+		</main>
 	);
 }

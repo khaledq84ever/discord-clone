@@ -10,6 +10,8 @@ import { redirect } from "next/navigation";
 import { MemberList } from "@/components/member-list";
 import { ServerSection } from "@/components/server-section";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MobileSheet } from "@/components/mobile-sheet";
+import { Users } from "lucide-react";
 
 
 interface ChannelIdPageProps {
@@ -36,6 +38,21 @@ export default async function ChannelIdPage(props: ChannelIdPageProps) {
 	}
     const otherMembers = server.members.filter((m) => m.profileId !== profile.id);
     const isText = channel.type === ChannelType.TEXT;
+    const membersPanel = (
+		<>
+			<ServerSection
+				sectionType="members"
+				role={member.role}
+				server={server}
+				label={`Members — ${server.members.length}`}
+			/>
+			<ScrollArea className="flex-1">
+				<div className="px-2 pb-3">
+					<MemberList server={{ ...server, members: otherMembers } as any} />
+				</div>
+			</ScrollArea>
+		</>
+	);
     return (
 		<div className="flex h-full">
 		<div
@@ -44,7 +61,24 @@ export default async function ChannelIdPage(props: ChannelIdPageProps) {
 				(channel.type === ChannelType.VIDEO || channel.type === ChannelType.AUDIO) && "overflow-hidden"
 			)}
 		>
-			<ChatHeader name={channel?.name} serverId={channel?.serverId} type="channel" />
+			<ChatHeader
+				name={channel?.name}
+				serverId={channel?.serverId}
+				type="channel"
+				actions={
+					isText && (
+						<MobileSheet
+							side="right"
+							label="Show members"
+							icon={<Users className="w-5 h-5" />}
+							triggerClassName="lg:hidden"
+							className="w-[min(85vw,280px)] sm:max-w-none flex-col bg-[#F2F3F5] dark:bg-[#2B2D31] pt-10"
+						>
+							{membersPanel}
+						</MobileSheet>
+					)
+				}
+			/>
 			{channel.type === ChannelType.TEXT && (
 				<>
 					<ChatMessages
@@ -81,17 +115,7 @@ export default async function ChannelIdPage(props: ChannelIdPageProps) {
 		</div>
 		{isText && (
 			<div className="hidden lg:flex w-60 h-full flex-col bg-[#F2F3F5] dark:bg-[#2B2D31] shrink-0">
-				<ServerSection
-					sectionType="members"
-					role={member.role}
-					server={server}
-					label={`Members — ${server.members.length}`}
-				/>
-				<ScrollArea className="flex-1">
-					<div className="px-2 pb-3">
-						<MemberList server={{ ...server, members: otherMembers } as any} />
-					</div>
-				</ScrollArea>
+				{membersPanel}
 			</div>
 		)}
 		</div>

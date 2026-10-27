@@ -88,7 +88,7 @@ export function CreateChannelModal() {
 	};
 	return (
 		<Dialog open={isModelOpen} onOpenChange={handleClose}>
-			<DialogContent className="bg-white text-black p-0 overflow-hidden">
+			<DialogContent className="bg-white text-black p-0 overflow-y-auto">
 				<DialogHeader className="pt-8 px-6">
 					<DialogTitle className="text-2xl text-center font-bold">Create Channel</DialogTitle>
 					<DialogDescription className="text-center text-zinc-500">

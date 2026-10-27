@@ -33,7 +33,9 @@ export function useChatQuery({ apiUrl, paramKey, paramValue, queryKey }: UseChat
 		queryKey: [queryKey],
 		queryFn: fetchMessages,
 		getNextPageParam: (lastPage) => lastPage?.nextCursor,
-		refetchInterval: isConnected ? 1000 : false,
+		// Live updates arrive over the socket; poll quickly only while it is down,
+		// with a slow safety net otherwise.
+		refetchInterval: isConnected ? 15000 : 2000,
 	});
 
 	return {

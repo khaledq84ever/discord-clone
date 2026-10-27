@@ -6,8 +6,9 @@ import { redirect } from "next/navigation";
 export default async function InviteCodePage(props: { params: Promise<{ inviteCode: string }> }) {
     const params = await props.params;
     const profile = await getCurrentProfile();
-    if (!profile) {
-		return redirect("/sign-in");
+        if (!profile) {
+		// Come back to this invite after picking a username.
+		return redirect(`/sign-in?redirect=${encodeURIComponent(`/invite/${params.inviteCode}`)}`);
 	}
     if (!params.inviteCode) {
 		return redirect("/");

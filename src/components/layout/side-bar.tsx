@@ -1,11 +1,11 @@
 
 import { SideBarActions } from "@/components/layout/side-bar-actions";
 import { SideBarItem } from "@/components/layout/side-bar-item";
+import { ProfileButton } from "@/components/user/profile-button";
 import { ModeToggle } from "@/components/mode-toggler";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { getAllServers, getCurrentProfile } from "@/lib/query";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 
 
@@ -28,17 +28,9 @@ export  async function SideBar() {
 					</div>
 				))}
 			</ScrollArea>
-			<div className="pb-3 mt-auto flex items-center flex-col gap-y-4">
+			<div className="pb-[max(0.75rem,env(safe-area-inset-bottom))] mt-auto flex items-center flex-col gap-y-4">
 				<ModeToggle />
-				<div className="h-[48px] w-[48px] rounded-[24px] overflow-hidden">
-					<Image
-						src={profile.imageUrl || "/icon.png"}
-						alt="avatar"
-						width={48}
-						height={48}
-						className="h-[48px] w-[48px] object-cover"
-					/>
-				</div>
+				<ProfileButton profile={profile} />
 			</div>
 		</div>
 	);

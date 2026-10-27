@@ -39,7 +39,7 @@ export  function ServerMember({ member, server }: ServerMemberProps) {
 			)}
 		>
 			<div className="relative">
-			<UserAvatar src={member?.profile?.imageUrl ?? undefined} className="h-8 w-8 md:h-8 md:w-8" />
+			<UserAvatar src={member?.profile?.imageUrl ?? undefined} name={member?.profile?.name} className="h-8 w-8 md:h-8 md:w-8" />
 			<span
 				className={cn(
 					"absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-[#2B2D31]",

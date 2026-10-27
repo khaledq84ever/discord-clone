@@ -11,6 +11,7 @@ import { DeleteChannelModal } from "@/components/modals/delete-channel-modal";
 import { EditChannelModal } from "@/components/modals/edit-channel-modal";
 import { MessageFileModal } from "@/components/modals/message-file-modal";
 import { DeleteMessageModal } from "@/components/modals/delete-message-modal";
+import { EditProfileModal } from "@/components/modals/edit-profile-modal";
 export function ModalProvider() {
 	return (
 		<>
@@ -25,6 +26,7 @@ export function ModalProvider() {
 			<EditChannelModal />
 			<MessageFileModal />
 			<DeleteMessageModal />
+			<EditProfileModal />
 		</>
 	);
 }

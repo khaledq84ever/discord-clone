@@ -37,7 +37,18 @@ export function SideBarItem({ name, id, imageUrl }: SideBarItemProps) {
 						params?.serverId === id && "rounded-[16px] text-primary bg-primary/10"
 					)}
 				>
-					{imageUrl && <Image fill src={imageUrl} alt={name} objectFit="cover" />}
+					{imageUrl ? (
+						<Image fill src={imageUrl} alt={name} className="object-cover" sizes="48px" />
+					) : (
+						<span className="flex h-full w-full items-center justify-center bg-zinc-300 dark:bg-zinc-700 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+							{name
+								.split(/\s+/)
+								.map((word) => word[0])
+								.join("")
+								.slice(0, 3)
+								.toUpperCase()}
+						</span>
+					)}
 				</div>
 			</button>
 		</ActionTooltip>
